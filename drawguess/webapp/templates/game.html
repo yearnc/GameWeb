@@ -1,0 +1,8 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>你画我猜</title>
+<link rel="stylesheet" href="./static/css/style.css"></head><body>
+<div id="app"><header id="topbar"><a href="./" class="tb-back">← 返回</a><div class="tb-center"><span class="tb-title">你画我猜</span></div><button id="btnExit" class="tb-exit">退出</button></header>
+<div id="canvasWrap"><canvas id="cvs" width="400" height="300"></canvas></div>
+<div id="tools"><button class="tbtn active" data-color="#000">⚫</button><button class="tbtn" data-color="#c0392b">🔴</button><button class="tbtn" data-color="#2980b9">🔵</button><button class="tbtn" data-color="#27ae60">🟢</button><button class="tbtn" data-color="#f39c12">🟠</button><button class="tbtn" data-color="#8e44ad">🟣</button><button class="tbtn" id="eraser">🧹</button><button class="tbtn" id="clear">🗑</button></div>
+<main id="chat"><div id="chatInner"></div></main>
+<div id="inputBar"><button id="guessBtn" style="width:100%;padding:10px;border:none;border-radius:20px;background:var(--accent);color:#fff;font-weight:600;font-size:.85rem;cursor:pointer;font-family:inherit">让 AI 猜！</button></div></div>
+<script src="./static/js/game.js"></script></body></html>

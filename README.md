@@ -1,6 +1,6 @@
 # 游戏小站
 
-一个简洁的网页游戏合集，集成 11 款游戏，统一入口、一键启动。
+一个简洁的网页游戏合集，集成 17 款游戏，统一入口、一键启动。
 
 > 狼人杀游戏基于 [yearnc/werewolf](https://github.com/yearnc/werewolf) 项目改造（路径适配、子应用挂载等），原项目已独立开源。
 
@@ -22,6 +22,9 @@ python start.py
 | 🐺 狼人杀 | `/werewolf` | LLM 大模型（9人局） | 旁观者 / 挑战者 |
 | 🕵️ 谁是卧底 | `/undercover` | LLM 大模型（5人局） | 观战 / 参与 |
 | 🐢 海龟汤 | `/turtlesoup` | LLM 大模型（AI裁判） | 单人推理 |
+| 📜 成语接龙 | `/idiom` | LLM 大模型 | 单人接龙 |
+| 💬 猜词游戏 | `/wordguess` | LLM 大模型 | 单人猜词 |
+| 🎨 你画我猜 | `/drawguess` | LLM 大模型 | 单人绘画 |
 
 ### 棋牌桌游
 
@@ -61,6 +64,18 @@ GameWeb/
 │   ├── webapp/           #   FastAPI + SSE + 聊天UI
 │   └── core/             #   状态机 + AI裁判 + 22个故事
 │
+├── idiom/                # 📜 成语接龙 — 水墨风 LLM 对战
+│   ├── webapp/           #   FastAPI + SSE + 聊天UI
+│   └── core/             #   LLM 判断 + 出题
+│
+├── wordguess/            # 💬 猜词游戏 — 活力橙 LLM 主持
+│   ├── webapp/           #   FastAPI + SSE + 聊天UI
+│   └── core/             #   LLM 提示 + 判断
+│
+├── drawguess/            # 🎨 你画我猜 — 工作室风绘画
+│   ├── webapp/           #   FastAPI + SSE + Canvas + 聊天UI
+│   └── core/             #   LLM 猜画
+│
 ├── go/                   # ⚪ 围棋 — Canvas + MCTS
 ├── gomoku/               # ⚫ 五子棋 — Canvas + 评分AI
 ├── tictactoe/            # ＃ 井字棋 — DOM + Minimax
@@ -86,6 +101,24 @@ GameWeb/
 - AI 裁判主持游戏，只回答 是/不是/是也不是/与此无关
 - 30 次提问机会，可提前提交完整推理
 - 22 个经典谜题故事
+
+### 成语接龙
+
+- **水墨书法风** UI，楷体字体 + 宣纸色背景
+- AI 出题 + 校验，玩家以最后一字接龙
+- 本地检测开头字符 + LLM 判断是否为真实成语
+
+### 猜词游戏
+
+- **活力橙渐变** UI，游戏节目风格
+- AI 想好一个词，玩家通过提问和提示来猜
+- 发消息立显，不等 LLM 回复
+
+### 你画我猜
+
+- **创意工作室** 紫色调 UI
+- Canvas 画布自由绘画，6 种颜色 + 橡皮
+- AI 通过画面描述猜测你画了什么
 
 ### 棋类游戏
 

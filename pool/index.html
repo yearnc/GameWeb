@@ -1,0 +1,73 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>台球</title><style>
+:root{--bg:#1a472a;--text:#e8e8d0}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);display:flex;justify-content:center;padding:20px;min-height:100vh}
+.c{display:flex;flex-direction:column;align-items:center;gap:12px}
+.hdr{width:100%;display:flex;align-items:center;justify-content:space-between;max-width:800px}
+.back{color:#b0c0a0;text-decoration:none;font-size:.85rem;padding:5px 12px;border:1px solid #3d6a4d;border-radius:20px;background:#2d5a3d}
+.back:hover{border-color:#d4a853;color:var(--text)}h1{font-size:1.2rem;font-weight:700;color:#d4a853}
+.info{display:flex;gap:24px;font-size:.85rem}
+canvas{border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.3);cursor:crosshair}
+.btn{padding:10px 20px;border:1px solid #3d6a4d;border-radius:8px;background:#2d5a3d;color:var(--text);font-size:.82rem;cursor:pointer;font-family:inherit}
+.btn:hover{border-color:#d4a853}.btn.pri{background:#d4a853;color:#1a1a1a;border-color:#d4a853}
+.hint{font-size:.75rem;color:#b0c0a0}
+</style></head><body><div class="c"><div class="hdr"><a href="/" class="back">← 返回</a><h1>台球</h1><div style="width:50px"></div></div>
+<div class="info"><span>进球: <b id="sc">0</b></span><span>击球: <b id="st">0</b></span></div>
+<canvas id="b" width="800" height="400"></canvas>
+<button class="btn pri" id="rst">重新摆球</button>
+<p class="hint">点击白球拖动瞄准 · 拖得越远力度越大</p>
+</div><script>
+var c=document.getElementById('b'),x=c.getContext('2d'),W=800,H=400,R=10;
+var balls=[],cueBall=null,dragging=false,dragStart=null,score=0,strokes=0,moving=false;
+
+var COLORS=['#fff','#f1c40f','#2980b9','#c0392b','#8e44ad','#e67e22','#27ae60','#8b4513',
+'#2d2418','#f1c40f','#2980b9','#c0392b','#8e44ad','#e67e22','#27ae60','#8b4513'];
+
+function resetBalls(){
+balls=[];var startX=W*.7,startY=H/2,rows=[1,2,3,4,5],idx=1;
+for(var r=0;r<rows.length;r++)for(var i=0;i<=r;i++){balls.push({x:startX+r*R*1.8,y:startY+(i-r/2)*R*2.2,vx:0,vy:0,color:COLORS[idx],alive:true,num:idx});idx++;}
+cueBall={x:W*.25,y:H/2,vx:0,vy:0,color:'#fff',alive:true,num:0};score=0;strokes=0;moving=false;updateUI();}
+
+function draw(){
+x.fillStyle='#1a472a';x.fillRect(0,0,W,H);
+x.fillStyle='#2d6a3f';x.fillRect(0,0,W,H);
+// felt texture
+for(var i=0;i<200;i++){x.fillStyle='rgba(255,255,255,'+(.02+Math.random()*.03)+')';x.fillRect(Math.random()*W,Math.random()*H,1,1);}
+// pockets
+var pockets=[[30,30],[W/2,20],[W-30,30],[30,H-30],[W/2,H-20],[W-30,H-30]];
+pockets.forEach(function(p){x.fillStyle='#0a0a0a';x.beginPath();x.arc(p[0],p[1],18,0,Math.PI*2);x.fill();x.fillStyle='#1a1a1a';x.beginPath();x.arc(p[0],p[1],14,0,Math.PI*2);x.fill();});
+// cue guide
+if(dragging&&dragStart&&!moving){x.strokeStyle='rgba(255,255,255,.15)';x.setLineDash([4,8]);x.beginPath();x.moveTo(cueBall.x,cueBall.y);x.lineTo(dragStart.x,dragStart.y);x.stroke();x.setLineDash([]);x.strokeStyle='rgba(255,255,255,.08)';x.beginPath();x.moveTo(cueBall.x,cueBall.y);x.lineTo(cueBall.x+(cueBall.x-dragStart.x)*2,cueBall.y+(cueBall.y-dragStart.y)*2);x.stroke();}
+// balls
+balls.forEach(function(b){if(!b.alive)return;drawBall(b);});
+drawBall(cueBall);
+}
+
+function drawBall(b){
+x.fillStyle=b.color;x.beginPath();x.arc(b.x,b.y,R,0,Math.PI*2);x.fill();
+if(b.num>0&&b.num<=8){x.fillStyle='#fff';x.beginPath();x.arc(b.x,b.y,R*.35,0,Math.PI*2);x.fill();}
+if(b.num>8&&b.num<=15){x.fillStyle='#fff';x.strokeStyle='#fff';x.lineWidth=1.5;x.beginPath();x.arc(b.x,b.y,R*.35,0,Math.PI*2);x.stroke();}
+x.fillStyle=b.color==='#fff'||b.color==='#f1c40f'?'#2d2418':'#fff';x.font='bold 8px Inter';x.textAlign='center';x.textBaseline='middle';if(b.num>0)x.fillText(b.num,b.x,b.y);x.textAlign='start';x.textBaseline='alphabetic';
+}
+
+function checkPockets(b){var pockets=[[30,30],[W/2,20],[W-30,30],[30,H-30],[W/2,H-20],[W-30,H-30]];
+for(var i=0;i<pockets.length;i++){var dx=b.x-pockets[i][0],dy=b.y-pockets[i][1];if(Math.sqrt(dx*dx+dy*dy)<18){b.alive=false;if(b.num===0){cueBall.x=W*.25;cueBall.y=H/2;cueBall.alive=true;cueBall.vx=0;cueBall.vy=0;}else{score++;}updateUI();return true;}}return false;}
+
+function physics(){
+var allMoving=false;
+var allBalls=balls.concat([cueBall]).filter(function(b){return b.alive;});
+for(var i=0;i<allBalls.length;i++){var b=allBalls[i];if(Math.abs(b.vx)<.05&&Math.abs(b.vy)<.05){b.vx=0;b.vy=0;continue;}allMoving=true;b.x+=b.vx;b.y+=b.vy;b.vx*=.985;b.vy*=.985;
+if(b.x<R||b.x>W-R){b.vx*=-.7;b.x=Math.max(R,Math.min(W-R,b.x));}if(b.y<R||b.y>H-R){b.vy*=-.7;b.y=Math.max(R,Math.min(H-R,b.y));}
+checkPockets(b);}
+for(var i=0;i<allBalls.length;i++)for(var j=i+1;j<allBalls.length;j++){var a=allBalls[i],b=allBalls[j];if(!a.alive||!b.alive)continue;var dx=b.x-a.x,dy=b.y-a.y,dist=Math.sqrt(dx*dx+dy*dy);if(dist<R*2){var nx=dx/dist,ny=dy/dist,overlap=R*2-dist;if(a===cueBall||b===cueBall){a.x-=nx*overlap*.5;b.x+=nx*overlap*.5;a.y-=ny*overlap*.5;b.y+=ny*overlap*.5;}
+var relVx=a.vx-b.vx,relVy=a.vy-b.vy,speed=relVx*nx+relVy*ny;if(speed>0){a.vx-=speed*nx*.9;b.vx+=speed*nx*.9;a.vy-=speed*ny*.9;b.vy+=speed*ny*.9;}allMoving=true;}}
+if(!allMoving&&moving){moving=false;}draw();if(allMoving)requestAnimationFrame(physics);else moving=false;}
+function updateUI(){document.getElementById('sc').textContent=score;document.getElementById('st').textContent=strokes;}
+
+function getPos(e){var r=c.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};}
+c.addEventListener('mousedown',function(e){if(moving)return;var p=getPos(e);var dx=p.x-cueBall.x,dy=p.y-cueBall.y;if(Math.sqrt(dx*dx+dy*dy)<R*2){dragging=true;dragStart=p;draw();}});
+document.addEventListener('mousemove',function(e){if(!dragging||moving)return;dragStart=getPos(e);draw();});
+document.addEventListener('mouseup',function(e){if(!dragging||moving)return;dragging=false;var p=getPos(e);var dx=cueBall.x-p.x,dy=cueBall.y-p.y,dist=Math.sqrt(dx*dx+dy*dy);if(dist>5){var nx=dx/dist,ny=dy/dist;var power=Math.min(dist,200)*.06;cueBall.vx=nx*power;cueBall.vy=ny*power;strokes++;updateUI();moving=true;requestAnimationFrame(physics);}draw();});
+document.getElementById('rst').onclick=function(){moving=false;dragging=false;resetBalls();draw();};
+resetBalls();draw();
+</script></body></html>

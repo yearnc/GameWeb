@@ -1,0 +1,41 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>乒乓球</title><style>
+:root{--bg:#f5f0e8;--surface:#fefcf8;--border:#e6ddd0;--text:#2d2418;--text-secondary:#6b5e4a}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);display:flex;justify-content:center;padding:20px;min-height:100vh}
+.c{display:flex;flex-direction:column;align-items:center;gap:12px}
+.hdr{width:100%;display:flex;align-items:center;justify-content:space-between}
+.back{color:var(--text-secondary);text-decoration:none;font-size:.85rem;padding:5px 12px;border:1px solid var(--border);border-radius:20px;background:var(--surface)}
+.back:hover{border-color:#c8b898}h1{font-size:1.2rem;font-weight:700}
+.info{display:flex;gap:24px;font-size:.85rem;color:var(--text-secondary)}
+canvas{background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.04)}
+.btn{padding:10px 20px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text-secondary);font-size:.82rem;cursor:pointer;font-family:inherit}
+.btn:hover{border-color:#c8b898}.btn.pri{background:#2d2418;color:#ede4d6;border-color:#2d2418}
+.hint{font-size:.75rem;color:var(--text-secondary);opacity:.7}
+</style></head><body><div class="c">
+<div class="hdr"><a href="/" class="back">← 返回</a><h1>乒乓球</h1><div style="width:50px"></div></div>
+<div class="info"><span>得分: <b id="p1">0</b></span><span>AI: <b id="p2">0</b></span></div>
+<canvas id="b" width="600" height="400"></canvas>
+<button class="btn pri" id="rst">重新开始</button><p class="hint">鼠标/触屏 上下移动球拍</p>
+</div><script>
+var c=document.getElementById('b'),x=c.getContext('2d'),w=600,h=400;
+var padH=80,padW=12,ballR=8,p1y=h/2-padH/2,p2y=h/2-padH/2;
+var bx=w/2,by=h/2,bdx=4,bdy=2,s1=0,s2=0,gOver=false,timer=null;
+var aiSpeed=3.5;
+function reset(){p1y=h/2-padH/2;p2y=h/2-padH/2;bx=w/2;by=h/2;bdx=(Math.random()>.5?4:-4);bdy=(Math.random()*4-2);gOver=false;}
+function draw(){x.fillStyle='#fefcf8';x.fillRect(0,0,w,h);
+x.strokeStyle='#e6ddd0';x.setLineDash([8,8]);x.beginPath();x.moveTo(w/2,0);x.lineTo(w/2,h);x.stroke();x.setLineDash([]);
+x.fillStyle='#2d2418';x.fillRect(10,p1y,padW,padH);x.fillRect(w-22,p2y,padW,padH);
+x.fillStyle='#e08830';x.beginPath();x.arc(bx,by,ballR,0,Math.PI*2);x.fill();
+x.fillStyle='#c8b898';x.font='14px Inter';x.textAlign='center';x.fillText(s1,w/4,30);x.fillText(s2,w*3/4,30);x.textAlign='start';}
+function loop(){bx+=bdx;by+=bdy;if(by<=ballR||by>=h-ballR)bdy=-bdy;
+if(bx<=10+padW){if(by>p1y&&by<p1y+padH){var rel=(by-p1y)/padH-.5;bdx=Math.abs(bdx)+1;bdy+=rel*3;bx=10+padW+ballR;}else{s2++;if(s2>=7){end('AI');return;}reset();}}
+if(bx>=w-22-padW){if(by>p2y&&by<p2y+padH){var rel=(by-p2y)/padH-.5;bdx=-(Math.abs(bdx)+1);bdy+=rel*3;bx=w-22-padW-ballR;}else{s1++;if(s1>=7){end('你');return;}reset();}}
+// AI
+var tgt=by-padH/2;p2y+=(tgt-p2y)*0.06;
+draw();timer=requestAnimationFrame(loop);}
+function end(w){gOver=true;cancelAnimationFrame(timer);x.fillStyle='rgba(0,0,0,.4)';x.fillRect(0,0,w,h);x.fillStyle='#fff';x.font='bold 24px Inter';x.textAlign='center';x.fillText(w+' 获胜!',w/2,h/2);x.textAlign='start';}
+c.addEventListener('mousemove',function(e){var r=c.getBoundingClientRect();p1y=Math.max(0,Math.min(h-padH,e.clientY-r.top-padH/2));});
+c.addEventListener('touchmove',function(e){e.preventDefault();var r=c.getBoundingClientRect();p1y=Math.max(0,Math.min(h-padH,e.touches[0].clientY-r.top-padH/2));});
+document.getElementById('rst').onclick=function(){cancelAnimationFrame(timer);s1=0;s2=0;document.getElementById('p1').textContent=0;document.getElementById('p2').textContent=0;reset();draw();timer=requestAnimationFrame(loop);};
+reset();draw();timer=requestAnimationFrame(loop);
+</script></body></html>

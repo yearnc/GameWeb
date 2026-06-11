@@ -1,0 +1,60 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>飞机大战</title><style>
+:root{--bg:#0a0c14;--text:#e2e4ec;--text-secondary:#9295a4}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);display:flex;justify-content:center;padding:20px;min-height:100vh}
+.c{display:flex;flex-direction:column;align-items:center;gap:12px}
+.hdr{width:100%;display:flex;align-items:center;justify-content:space-between;max-width:420px}
+.back{color:var(--text-secondary);text-decoration:none;font-size:.85rem;padding:5px 12px;border:1px solid #333;border-radius:20px;background:#1a1c28}
+.back:hover{border-color:#666}h1{font-size:1.2rem;font-weight:700}
+.info{display:flex;gap:20px;font-size:.85rem;color:var(--text-secondary)}
+canvas{border-radius:8px}
+.btn{padding:10px 20px;border:1px solid #333;border-radius:8px;background:#1a1c28;color:var(--text-secondary);font-size:.82rem;cursor:pointer;font-family:inherit}
+.btn:hover{border-color:#666}.btn.pri{background:#e74c3c;color:#fff;border-color:#e74c3c}
+.hint{font-size:.75rem;color:var(--text-secondary);opacity:.7}
+</style></head><body><div class="c"><div class="hdr"><a href="/" class="back">← 返回</a><h1>飞机大战</h1><div style="width:50px"></div></div>
+<div class="info"><span>得分: <b id="s">0</b></span><span>最高: <b id="hi">0</b></span><span>💙 <b id="hp">3</b></span></div>
+<canvas id="b"></canvas><button class="btn pri" id="startBtn" style="display:block">开始游戏</button><button class="btn pri" id="rst" style="display:none">重新开始</button><p class="hint">鼠标移动 / 触屏拖动 · 自动射击</p></div>
+<script>
+var c=document.getElementById('b'),x=c.getContext('2d'),W=400,H=600;
+c.width=W;c.height=H;
+var px=W/2,py=H-80,bullets=[],enemies=[],stars=[],score=0,hp=3,gameOver=false,inv=0,started=false;
+var high=parseInt(localStorage.getItem('shooterHi')||'0');document.getElementById('hi').textContent=high;
+for(var i=0;i<60;i++)stars.push({x:Math.random()*W,y:Math.random()*H,s:Math.random()*2+1});
+function spawn(){if(gameOver||!started)return;var t=Math.random();if(t<.6){enemies.push({x:Math.random()*(W-30)+15,y:-30,w:30,h:30,hp:4,type:0});}else if(t<.9){enemies.push({x:Math.random()*(W-40)+20,y:-40,w:40,h:40,hp:8,type:1});}else{enemies.push({x:Math.random()*(W-50)+25,y:-50,w:50,h:50,hp:16,type:2});}}
+function reset(){px=W/2;py=H-80;bullets=[];enemies=[];score=0;hp=3;gameOver=false;inv=0;started=false;document.getElementById('s').textContent=0;document.getElementById('hp').textContent=hp;document.getElementById('startBtn').style.display='';}
+function draw(){
+x.fillStyle='#0a0c14';x.fillRect(0,0,W,H);
+stars.forEach(function(s){x.fillStyle='rgba(255,255,255,'+(.5+s.s*.15)+')';x.fillRect(s.x,s.y,s.s,s.s);s.y+=s.s;if(s.y>H){s.y=0;s.x=Math.random()*W;}});
+bullets.forEach(function(b){x.fillStyle='#f1c40f';x.fillRect(b.x-1,b.y-6,2,10);});
+enemies.forEach(function(e){if(e.type===0){x.fillStyle='#e74c3c';x.fillRect(e.x,e.y,e.w,e.h);x.fillStyle='#c0392b';x.fillRect(e.x+5,e.y+5,8,8);x.fillRect(e.x+e.w-13,e.y+5,8,8);}
+else if(e.type===1){x.fillStyle='#e67e22';x.beginPath();x.moveTo(e.x+e.w/2,e.y);x.lineTo(e.x+e.w,e.y+e.h);x.lineTo(e.x,e.y+e.h);x.fill();}
+else{x.fillStyle='#8e44ad';x.fillRect(e.x,e.y,e.w,e.h);x.fillStyle='#9b59b6';x.fillRect(e.x+8,e.y+8,e.w-16,e.h-16);}});
+// Player
+x.fillStyle=inv%10<5?'rgba(52,152,219,.5)':'#3498db';
+x.beginPath();x.moveTo(px,py-30);x.lineTo(px-20,py+10);x.lineTo(px-8,py+5);x.lineTo(px-4,py+20);x.lineTo(px+4,py+20);x.lineTo(px+8,py+5);x.lineTo(px+20,py+10);x.fill();
+x.fillStyle='#2ecc71';x.fillRect(px-2,py-35,4,10);
+}
+function loop(){
+if(gameOver||!started){requestAnimationFrame(loop);return;}
+if(inv>0)inv--;
+bullets.forEach(function(b,i){b.y-=8;if(b.y<0)bullets.splice(i,1);});
+enemies.forEach(function(e,i){e.y+=e.type===0?2.1:e.type===1?1.4:0.7;
+if(e.y>H){enemies.splice(i,1);if(inv<=0){hp--;document.getElementById('hp').textContent=hp;inv=60;if(hp<=0){end();return;}}}
+bullets.forEach(function(b,bi){
+if(b.x>e.x&&b.x<e.x+e.w&&b.y>e.y&&b.y<e.y+e.h){e.hp--;bullets.splice(bi,1);
+if(e.hp<=0){score+=e.type===0?10:e.type===1?30:80;document.getElementById('s').textContent=score;enemies.splice(i,1);}}});
+});
+// Auto shoot
+if(!gameOver&&started&&Math.random()<.1)bullets.push({x:px+4,y:py-35});
+draw();
+if(!gameOver)requestAnimationFrame(loop);
+}
+function end(){gameOver=true;if(score>high){high=score;localStorage.setItem('shooterHi',high);document.getElementById('hi').textContent=high;}
+x.fillStyle='rgba(0,0,0,.6)';x.fillRect(0,0,W,H);x.fillStyle='#fff';x.font='bold 24px Inter';x.textAlign='center';x.fillText('游戏结束',W/2,H/2-10);x.font='16px Inter';x.fillText('得分: '+score,W/2,H/2+20);x.textAlign='start';}
+c.addEventListener('mousemove',function(e){var r=c.getBoundingClientRect();px=Math.max(20,Math.min(W-20,e.clientX-r.left));});
+c.addEventListener('touchmove',function(e){e.preventDefault();var r=c.getBoundingClientRect();px=Math.max(20,Math.min(W-20,e.touches[0].clientX-r.left));});
+document.getElementById('startBtn').onclick=function(){started=true;this.style.display='none';document.getElementById('rst').style.display='';spawn();};
+document.getElementById('rst').onclick=function(){reset();spawn();document.getElementById('startBtn').style.display='none';document.getElementById('rst').style.display='';};
+setInterval(function(){if(!gameOver&&started)spawn();},1200);
+reset();draw();requestAnimationFrame(loop);
+</script></body></html>

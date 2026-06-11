@@ -1,0 +1,28 @@
+/* 你画我猜 — 创意工作室 */
+:root{--bg:#faf8f5;--surface:#fff;--border:#e8e0d8;--text:#2d2418;--text-secondary:#6b5e4a;--text-muted:#a89880;--accent:#8e44ad;--accent2:#9b59b6;--radius:12px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.landing{max-width:440px;margin:80px auto 0;padding:0 20px;text-align:center}
+.back{position:fixed;top:16px;left:20px;z-index:10;color:var(--text-muted);text-decoration:none;font-size:.78rem;padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface);transition:.2s}
+.back:hover{border-color:var(--accent);color:var(--text)}
+.hero{margin-bottom:32px}.hero-badge{display:inline-block;padding:4px 16px;border-radius:20px;background:rgba(142,68,173,.06);border:1px solid rgba(142,68,173,.15);font-size:.7rem;color:var(--accent);font-weight:600;letter-spacing:1.5px;margin-bottom:16px}
+.hero h1{font-size:2.2rem;font-weight:800;letter-spacing:4px;margin-bottom:10px}
+.hero-desc{color:var(--text-secondary);font-size:.85rem;line-height:1.8}
+.start-btn{display:inline-block;padding:14px 48px;border-radius:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;font-size:1rem;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:2px;text-decoration:none}.start-btn:hover{background:linear-gradient(135deg,#9b59b6,#a86cc4)}
+#app{max-width:540px;width:100%;height:100vh;margin:0 auto;display:flex;flex-direction:column;background:var(--bg)}
+#topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+.tb-back{color:var(--text-muted);text-decoration:none;font-size:.78rem;padding:4px 10px;border-radius:6px}.tb-back:hover{color:var(--text)}
+.tb-center{display:flex;align-items:center;gap:10px}.tb-title{font-size:.9rem;font-weight:700}
+.tb-exit{background:none;border:1px solid #e0d0e0;color:#a06090;padding:4px 14px;border-radius:20px;font-size:.72rem;cursor:pointer;font-family:inherit}
+#canvasWrap{padding:10px;display:flex;justify-content:center;background:var(--surface);border-bottom:1px solid var(--border)}
+canvas{background:#fff;border-radius:8px;cursor:crosshair;max-width:100%;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+#tools{display:flex;gap:4px;justify-content:center;padding:8px;background:var(--surface);border-bottom:1px solid var(--border)}
+.tbtn{width:32px;height:32px;border-radius:50%;border:2px solid var(--border);cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;background:#faf8f5;transition:.15s}
+.tbtn.active{border-color:var(--accent);box-shadow:0 0 0 2px rgba(142,68,173,.15)}
+#chat{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px}
+.chat-msg{padding:10px 14px;border-radius:var(--radius);font-size:.85rem;line-height:1.6;animation:in .3s ease;max-width:85%}
+@keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.chat-msg.system{align-self:center;color:var(--text-muted);font-size:.76rem;background:none;border:none;max-width:100%}
+.chat-msg.player{align-self:flex-end;background:rgba(142,68,173,.05);border:1px solid rgba(142,68,173,.12)}
+.chat-msg.ai{align-self:flex-start;background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent)}
+#inputBar{padding:10px 14px;background:var(--surface);border-top:1px solid var(--border);flex-shrink:0}

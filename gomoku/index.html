@@ -507,6 +507,11 @@ function draw() {
         ctx.fill();
     }
 
+    // Board border (drawn before stones)
+    ctx.strokeStyle = '#8b6f47';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(PAD - 2, PAD - 2, (BOARD_SIZE - 1) * CELL + 4, (BOARD_SIZE - 1) * CELL + 4);
+
     // Stones
     for (var i = 0; i < pieces.length; i++) {
         var p = pieces[i];
@@ -573,10 +578,6 @@ function draw() {
         }
     }
 
-    // Board border
-    ctx.strokeStyle = '#8b6f47';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(PAD - 2, PAD - 2, (BOARD_SIZE - 1) * CELL + 4, (BOARD_SIZE - 1) * CELL + 4);
 }
 
 // ── Game Actions ───────────────────────────────────────
