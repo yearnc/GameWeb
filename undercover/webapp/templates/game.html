@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>谁是卧底 · 游戏中</title>
+    <link rel="stylesheet" href="./static/css/style.css">
+</head>
+<body>
+<div id="app">
+    <!-- 顶栏 -->
+    <header id="topbar">
+        <a href="./" class="topbar-back">← 返回</a>
+        <div class="topbar-center">
+            <span class="topbar-title">谁是卧底</span>
+            <span class="topbar-round" id="roundBadge">准备中</span>
+        </div>
+        <button id="btnExit" class="topbar-exit">退出</button>
+    </header>
+
+    <!-- 玩家状态条 -->
+    <div id="playerStrip"></div>
+
+    <!-- 聊天区 -->
+    <main id="chatArea">
+        <div id="chatInner"></div>
+    </main>
+
+    <!-- 输入区 -->
+    <div id="inputBar" style="display:none">
+        <input type="text" id="msgInput" maxlength="40" placeholder="用一句话描述你的词语…">
+        <button id="msgSend">发送</button>
+    </div>
+
+    <!-- 投票区 -->
+    <div id="voteBar" style="display:none">
+        <span class="vote-label">投票给：</span>
+        <div id="voteOptions"></div>
+        <button id="voteConfirm" disabled>确认</button>
+    </div>
+
+    <!-- 弹窗 -->
+    <div id="infoOverlay" style="display:none">
+        <div class="info-card" id="infoCard"></div>
+    </div>
+</div>
+
+<script src="./static/js/game.js"></script>
+</body>
+</html>

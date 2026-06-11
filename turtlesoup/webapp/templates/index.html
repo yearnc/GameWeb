@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>海龟汤</title>
+    <link rel="stylesheet" href="./static/css/style.css">
+</head>
+<body>
+<div class="landing">
+    <a href="/" class="back-link">← 返回主页</a>
+    <header class="hero">
+        <div class="hero-badge">🐢 推理挑战</div>
+        <h1>海 龟 汤</h1>
+        <p class="hero-desc">
+            AI 裁判给出一个离奇故事的开头，<br>
+            你通过提问推理出完整的故事真相。
+        </p>
+        <div class="rules">
+            <span>🔍 最多 30 次提问</span>
+            <span>✅ 裁判只回答 是/不是</span>
+            <span>📝 推理完整故事提交作答</span>
+        </div>
+    </header>
+    <button class="start-btn" id="btnStart" onclick="startGame()">
+        <span>开始推理</span>
+    </button>
+</div>
+
+<script>
+var starting = false;
+async function startGame() {
+    if (starting) return;
+    starting = true;
+    document.getElementById('btnStart').classList.add('loading');
+    try {
+        await fetch('./api/start', { method: 'POST' });
+        window.location.href = './game';
+    } catch (err) {
+        starting = false;
+        document.getElementById('btnStart').classList.remove('loading');
+    }
+}
+</script>
+</body>
+</html>

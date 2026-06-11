@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>井字棋</title>
+<style>
+/* ================================================================
+   井字棋 — Tic-Tac-Toe
+   ================================================================ */
+:root {
+    --bg: #f5f0e8;
+    --surface: #fefcf8;
+    --border: #e6ddd0;
+    --text: #2d2418;
+    --text-secondary: #6b5e4a;
+    --text-muted: #a89880;
+    --x-color: #e06040;
+    --o-color: #4088c0;
+    --win-glow: rgba(224, 160, 64, 0.3);
+    --radius: 12px;
+    --transition: 0.2s ease;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: "Inter", "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 20px;
+    -webkit-font-smoothing: antialiased;
+}
+
+.container {
+    max-width: 400px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+/* Header */
+.header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.back-link {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.88rem;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    transition: all var(--transition);
+}
+.back-link:hover { border-color: #c8b898; color: var(--text); }
+
+.title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.header-spacer { width: 70px; }
+
+/* Mode */
+.mode-bar {
+    display: flex;
+    gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 4px;
+}
+
+.mode-btn {
+    padding: 8px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: inherit;
+    transition: all var(--transition);
+}
+.mode-btn.active { background: #2d2418; color: #ede4d6; }
+.mode-btn:hover:not(.active) { color: var(--text); }
+
+/* Score */
+.score-bar {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.score-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+}
+
+.score-x, .score-o { font-weight: 700; }
+.score-x { color: var(--x-color); }
+.score-o { color: var(--o-color); }
+
+.score-divider { color: var(--text-muted); }
+
+/* Board */
+.board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    width: 100%;
+    max-width: 320px;
+    aspect-ratio: 1;
+}
+
+.cell {
+    background: #faf6f0;
+    border: 1.5px solid #e8ddd0;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    transition: all var(--transition);
+    position: relative;
+}
+
+.cell:hover:not(.taken) {
+    background: #fef9f2;
+    border-color: #d4c8b4;
+    transform: scale(1.03);
+}
+
+.cell.taken { cursor: default; }
+
+.cell.x-mark .mark { color: var(--x-color); }
+.cell.o-mark .mark { color: var(--o-color); }
+
+.mark {
+    font-size: 2.4rem;
+    font-weight: 800;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.2s cubic-bezier(0.34, 1.05, 0.64, 1);
+    user-select: none;
+}
+
+.cell.taken .mark {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Win cells */
+.cell.win-cell {
+    border-color: #e0a830;
+    box-shadow: 0 0 12px var(--win-glow);
+    background: #fef8e8;
+    animation: winPulse 1s ease-in-out infinite;
+}
+@keyframes winPulse {
+    0%, 100% { box-shadow: 0 0 8px var(--win-glow); }
+    50% { box-shadow: 0 0 20px rgba(224, 160, 64, 0.5); }
+}
+
+/* Status */
+.status-text {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    min-height: 1.5em;
+    text-align: center;
+}
+
+.reset-btn {
+    padding: 8px 24px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all var(--transition);
+}
+.reset-btn:hover { border-color: #c8b898; color: var(--text); }
+
+/* Responsive */
+@media (max-width: 400px) {
+    body { padding: 10px; }
+    .container { gap: 14px; }
+    .board { padding: 12px; gap: 4px; max-width: 280px; }
+    .mark { font-size: 2rem; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <a href="/" class="back-link">← 返回主页</a>
+        <h1 class="title">井字棋</h1>
+        <div class="header-spacer"></div>
+    </div>
+
+    <div class="mode-bar" id="modeBar">
+        <button class="mode-btn" data-mode="0">观战模式</button>
+        <button class="mode-btn active" data-mode="1">人机对战</button>
+    </div>
+
+    <div class="score-bar">
+        <div class="score-item"><span>✕</span> <span class="score-x" id="scoreX">0</span></div>
+        <span class="score-divider">—</span>
+        <div class="score-item"><span>◯</span> <span class="score-o" id="scoreO">0</span></div>
+        <span class="score-divider">平</span>
+        <span class="score-item" id="scoreDraw">0</span>
+    </div>
+
+    <div class="board" id="board">
+        <div class="cell" data-i="0"><span class="mark"></span></div>
+        <div class="cell" data-i="1"><span class="mark"></span></div>
+        <div class="cell" data-i="2"><span class="mark"></span></div>
+        <div class="cell" data-i="3"><span class="mark"></span></div>
+        <div class="cell" data-i="4"><span class="mark"></span></div>
+        <div class="cell" data-i="5"><span class="mark"></span></div>
+        <div class="cell" data-i="6"><span class="mark"></span></div>
+        <div class="cell" data-i="7"><span class="mark"></span></div>
+        <div class="cell" data-i="8"><span class="mark"></span></div>
+    </div>
+
+    <p class="status-text" id="statusText"></p>
+    <button class="reset-btn" id="resetBtn">重新开始</button>
+    <button class="reset-btn" id="spectateBtn" style="display:none">开始观战</button>
+</div>
+
+<script>
+// ================================================================
+// 井字棋 — Game Logic
+// ================================================================
+
+var board = Array(9).fill(null);   // null | 'X' | 'O'
+var gameMode = 1;                  // 0=Spectate, 1=PvE
+var currentPlayer = 'X';           // X always first
+var gameOver = false;
+var winCells = [];
+var scores = { X: 0, O: 0, draw: 0 };
+
+var HUMAN = 'X';
+var AI = 'O';
+
+var WIN_LINES = [
+    [0,1,2],[3,4,5],[6,7,8],  // rows
+    [0,3,6],[1,4,7],[2,5,8],  // cols
+    [0,4,8],[2,4,6]            // diags
+];
+
+// ── Board helpers ──────────────────────────────────────
+
+function checkWinner(b) {
+    for (var i = 0; i < WIN_LINES.length; i++) {
+        var a = WIN_LINES[i][0], bb = WIN_LINES[i][1], c = WIN_LINES[i][2];
+        if (b[a] && b[a] === b[bb] && b[a] === b[c]) {
+            return { winner: b[a], line: WIN_LINES[i] };
+        }
+    }
+    return null;
+}
+
+function isFull(b) {
+    for (var i = 0; i < 9; i++) {
+        if (!b[i]) return false;
+    }
+    return true;
+}
+
+// ── AI: Minimax ─────────────────────────────────────────
+
+function minimax(b, isMaximizing, aiSide) {
+    var opponent = aiSide === 'X' ? 'O' : 'X';
+    var result = checkWinner(b);
+    if (result && result.winner === aiSide) return 10;
+    if (result && result.winner === opponent) return -10;
+    if (isFull(b)) return 0;
+
+    if (isMaximizing) {
+        var best = -Infinity;
+        for (var i = 0; i < 9; i++) {
+            if (!b[i]) {
+                b[i] = aiSide;
+                var score = minimax(b, false, aiSide);
+                b[i] = null;
+                if (score > best) best = score;
+            }
+        }
+        return best;
+    } else {
+        var best = Infinity;
+        for (var i = 0; i < 9; i++) {
+            if (!b[i]) {
+                b[i] = opponent;
+                var score = minimax(b, true, aiSide);
+                b[i] = null;
+                if (score < best) best = score;
+            }
+        }
+        return best;
+    }
+}
+
+function aiMove() {
+    var aiSide = currentPlayer;
+    // First move: pick randomly for variety
+    var emptyCount = 0;
+    for (var i = 0; i < 9; i++) { if (!board[i]) emptyCount++; }
+    if (emptyCount === 9) {
+        var openers = [4, 0, 2, 6, 8];
+        return openers[Math.floor(Math.random() * openers.length)];
+    }
+
+    var bestScore = -Infinity;
+    var bestMoves = [];
+    for (var i = 0; i < 9; i++) {
+        if (!board[i]) {
+            board[i] = aiSide;
+            var score = minimax(board, false, aiSide);
+            board[i] = null;
+            if (score > bestScore) {
+                bestScore = score;
+                bestMoves = [i];
+            } else if (score === bestScore) {
+                bestMoves.push(i);
+            }
+        }
+    }
+    return bestMoves[Math.floor(Math.random() * bestMoves.length)];
+}
+
+// ── UI helpers ──────────────────────────────────────────
+
+function cellEl(i) {
+    return document.querySelector('.cell[data-i="' + i + '"]');
+}
+
+function markEl(i) {
+    return cellEl(i).querySelector('.mark');
+}
+
+function renderBoard() {
+    for (var i = 0; i < 9; i++) {
+        var cell = cellEl(i);
+        var mark = markEl(i);
+
+        // Reset classes
+        cell.classList.remove('x-mark', 'o-mark', 'taken', 'win-cell');
+        mark.textContent = '';
+
+        if (board[i]) {
+            cell.classList.add('taken');
+            if (board[i] === 'X') {
+                cell.classList.add('x-mark');
+                mark.textContent = '✕';
+            } else {
+                cell.classList.add('o-mark');
+                mark.textContent = '◯';
+            }
+        }
+    }
+
+    // Highlight win cells
+    if (winCells.length > 0) {
+        for (var i = 0; i < winCells.length; i++) {
+            cellEl(winCells[i]).classList.add('win-cell');
+        }
+    }
+}
+
+function updateStatus(msg) {
+    document.getElementById('statusText').textContent = msg || '';
+}
+
+function updateScores() {
+    document.getElementById('scoreX').textContent = scores.X;
+    document.getElementById('scoreO').textContent = scores.O;
+    document.getElementById('scoreDraw').textContent = scores.draw;
+}
+
+// ── Game actions ────────────────────────────────────────
+
+function makeMove(i) {
+    if (gameOver || board[i]) return;
+    if (gameMode === 0 || (gameMode === 1 && currentPlayer !== HUMAN)) return;
+
+    // Place piece
+    board[i] = currentPlayer;
+    renderBoard();
+
+    // Check result
+    var result = checkWinner(board);
+    if (result) {
+        gameOver = true;
+        winCells = result.line;
+        renderBoard();
+        scores[result.winner]++;
+        updateScores();
+        if (gameMode === 1 && result.winner === HUMAN) {
+            updateStatus('你赢了！🎉');
+        } else if (gameMode === 1 && result.winner === AI) {
+            updateStatus('AI 赢了~');
+        } else {
+            updateStatus(result.winner + ' 获胜！');
+        }
+        return;
+    }
+
+    if (isFull(board)) {
+        gameOver = true;
+        scores.draw++;
+        updateScores();
+        updateStatus('平局！');
+        return;
+    }
+
+    // Switch turn
+    currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+    updateStatus(gameMode === 0
+        ? 'AI 思考中...'
+        : (currentPlayer === HUMAN ? '你的回合' : 'AI 思考中...'));
+
+    // AI turn (spectate: both sides, PvE: AI only)
+    var isAI = (gameMode === 0) || (gameMode === 1 && currentPlayer === AI);
+    if (isAI && !gameOver) {
+        var delay = gameMode === 0 ? 500 : 300;
+        setTimeout(doAIMove, delay);
+    }
+}
+
+function doAIMove() {
+    if (gameOver) return;
+    var aiPlayer = currentPlayer;
+    var move = aiMove();
+    board[move] = aiPlayer;
+    renderBoard();
+
+    var result2 = checkWinner(board);
+    if (result2) {
+        gameOver = true;
+        winCells = result2.line;
+        renderBoard();
+        scores[result2.winner]++;
+        updateScores();
+        updateStatus('AI (' + aiPlayer + ') 赢了~');
+        return;
+    }
+
+    if (isFull(board)) {
+        gameOver = true;
+        scores.draw++;
+        updateScores();
+        updateStatus('平局！');
+        return;
+    }
+
+    currentPlayer = aiPlayer === 'X' ? 'O' : 'X';
+    updateStatus(gameMode === 0 ? 'AI 思考中...' : '你的回合');
+
+    // If spectate mode, trigger next AI
+    if (gameMode === 0 && !gameOver) {
+        setTimeout(doAIMove, 500);
+    }
+}
+
+function resetGame() {
+    board = Array(9).fill(null);
+    currentPlayer = 'X';
+    gameOver = false;
+    winCells = [];
+    renderBoard();
+    var specBtn = document.getElementById('spectateBtn');
+    if (gameMode === 0) {
+        specBtn.style.display = '';
+        updateStatus('点击「开始观战」');
+    } else {
+        specBtn.style.display = 'none';
+        updateStatus('你的回合（✕）');
+    }
+}
+
+// ── Events ──────────────────────────────────────────────
+
+document.querySelectorAll('.cell').forEach(function(cell) {
+    cell.addEventListener('click', function() {
+        makeMove(parseInt(this.dataset.i));
+    });
+});
+
+document.querySelectorAll('.mode-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.mode-btn').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        gameMode = parseInt(btn.dataset.mode);
+        scores = { X: 0, O: 0, draw: 0 };
+        updateScores();
+        resetGame();
+    });
+});
+
+document.getElementById('resetBtn').addEventListener('click', resetGame);
+
+document.getElementById('spectateBtn').addEventListener('click', function() {
+    this.style.display = 'none';
+    updateStatus('AI 思考中...');
+    setTimeout(doAIMove, 400);
+});
+
+// ── Init ────────────────────────────────────────────────
+resetGame();
+updateScores();
+</script>
+</body>
+</html>

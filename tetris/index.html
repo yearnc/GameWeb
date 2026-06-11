@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>俄罗斯方块</title>
+<style>
+:root{--bg:#f5f0e8;--surface:#fefcf8;--border:#e6ddd0;--text:#2d2418;--text-secondary:#6b5e4a;--accent:#4f46e5;--radius:12px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);display:flex;justify-content:center;padding:20px;min-height:100vh}
+.container{display:flex;flex-direction:column;align-items:center;gap:14px}
+.header{width:100%;display:flex;align-items:center;justify-content:space-between}
+.back{color:var(--text-secondary);text-decoration:none;font-size:.85rem;padding:5px 12px;border:1px solid var(--border);border-radius:20px;background:var(--surface)}
+.back:hover{border-color:#c8b898}
+h1{font-size:1.2rem;font-weight:700}
+.info{display:flex;gap:24px;font-size:.85rem}
+.info span{color:var(--text-secondary)}
+canvas{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 2px 12px rgba(0,0,0,.04)}
+.controls{display:flex;gap:12px}
+.btn{padding:10px 20px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text-secondary);font-size:.82rem;cursor:pointer;font-family:inherit}
+.btn:hover{border-color:#c8b898}
+.btn.primary{background:#2d2418;color:#ede4d6;border-color:#2d2418}
+.hint{font-size:.75rem;color:var(--text-secondary);opacity:.7}
+@media(max-width:500px){.info{flex-wrap:wrap;gap:12px}.btn{padding:8px 14px}}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header"><a href="/" class="back">← 返回</a><h1>俄罗斯方块</h1><div style="width:50px"></div></div>
+<div class="info"><span>得分: <b id="score">0</b></span><span>等级: <b id="level">1</b></span><span>行数: <b id="lines">0</b></span></div>
+<canvas id="board"></canvas>
+<div class="controls">
+  <button class="btn" id="btnPause">暂停</button>
+  <button class="btn primary" id="btnReset">重新开始</button>
+</div>
+<p class="hint">方向键/WASD 移动 · ↑/W 旋转 · ↓/S 加速 · 空格硬降</p>
+</div>
+<script>
+var COLS=10,ROWS=20,CELL=28;
+var canvas=document.getElementById('board'),ctx=canvas.getContext('2d');
+canvas.width=COLS*CELL;canvas.height=ROWS*CELL;
+var board=[],score=0,level=1,lines=0,paused=false,gameOver=false;
+var current=null,next=null,timer=null;
+var SHAPES=[[[1,1,1,1]],[[1,1],[1,1]],[[0,1,0],[1,1,1]],[[1,0,0],[1,1,1]],[[0,0,1],[1,1,1]],[[0,1,1],[1,1,0]],[[1,1,0],[0,1,1]]];
+var COLORS=['#4f46e5','#e08830','#c0392b','#27ae60','#2980b9','#8e44ad','#16a085'];
+
+function newBoard(){for(var r=0;r<ROWS;r++){board[r]=[];for(var c=0;c<COLS;c++)board[r][c]=0;}}
+function randomPiece(){var s=Math.floor(Math.random()*SHAPES.length);var p=SHAPES[s];var w=p[0].length,h=p.length;return{shape:p,x:Math.floor((COLS-w)/2),y:0,color:s+1};}
+function collide(piece,dx,dy){for(var r=0;r<piece.shape.length;r++)for(var c=0;c<piece.shape[r].length;c++)if(piece.shape[r][c]){var nx=piece.x+c+dx,ny=piece.y+r+dy;if(nx<0||nx>=COLS||ny>=ROWS)return true;if(ny>=0&&board[ny][nx])return true;}return false;}
+function lock(){for(var r=0;r<current.shape.length;r++)for(var c=0;c<current.shape[r].length;c++)if(current.shape[r][c]){var y=current.y+r;if(y<0){endGame();return;}board[y][current.x+c]=current.color;}clearLines();spawn();}
+function clearLines(){var cleared=0;for(var r=ROWS-1;r>=0;r--){if(board[r].every(function(v){return v>0;})){board.splice(r,1);board.unshift(new Array(COLS).fill(0));cleared++;r++;}}
+if(cleared){lines+=cleared;score+=[0,100,300,500,800][cleared]*level;level=Math.floor(lines/10)+1;updateUI();}}
+function spawn(){current=next||randomPiece();next=randomPiece();if(collide(current,0,0))endGame();}
+function move(dx,dy){if(!collide(current,dx,dy)){current.x+=dx;current.y+=dy;draw();return true;}if(dy===1){lock();}return false;}
+function rotate(){var r=current.shape[0].length,c=current.shape.length;var n=[];for(var i=0;i<r;i++){n[i]=[];for(var j=0;j<c;j++)n[i][j]=current.shape[c-1-j][i];}
+var old=current.shape;current.shape=n;if(collide(current,0,0))current.shape=old;}
+function hardDrop(){while(move(0,1));draw();}
+function tick(){if(!paused&&!gameOver){move(0,1);draw();}var speed=Math.max(50,800-level*70);timer=setTimeout(tick,speed);}
+function endGame(){gameOver=true;ctx.fillStyle='rgba(0,0,0,.5)';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#fff';ctx.font='bold 24px Inter';ctx.textAlign='center';ctx.fillText('游戏结束',canvas.width/2,canvas.height/2);ctx.textAlign='start';}
+function draw(){ctx.fillStyle='#fefcf8';ctx.fillRect(0,0,canvas.width,canvas.height);
+// Grid
+ctx.strokeStyle='#f0ebe0';ctx.lineWidth=.5;for(var i=0;i<=COLS;i++){ctx.beginPath();ctx.moveTo(i*CELL,0);ctx.lineTo(i*CELL,ROWS*CELL);ctx.stroke();}
+for(var i=0;i<=ROWS;i++){ctx.beginPath();ctx.moveTo(0,i*CELL);ctx.lineTo(COLS*CELL,i*CELL);ctx.stroke();}
+// Board
+for(var r=0;r<ROWS;r++)for(var c=0;c<COLS;c++)if(board[r][c]){ctx.fillStyle=COLORS[board[r][c]-1];ctx.fillRect(c*CELL+1,r*CELL+1,CELL-2,CELL-2);ctx.fillStyle='rgba(255,255,255,.15)';ctx.fillRect(c*CELL+1,r*CELL+1,CELL-2,6);}
+// Current
+if(current)for(var r=0;r<current.shape.length;r++)for(var c=0;c<current.shape[r].length;c++)if(current.shape[r][c]){var x=(current.x+c)*CELL,y=(current.y+r)*CELL;ctx.fillStyle=COLORS[current.color-1];ctx.fillRect(x+1,y+1,CELL-2,CELL-2);ctx.fillStyle='rgba(255,255,255,.2)';ctx.fillRect(x+1,y+1,CELL-2,6);}}
+function updateUI(){document.getElementById('score').textContent=score;document.getElementById('level').textContent=level;document.getElementById('lines').textContent=lines;}
+document.addEventListener('keydown',function(e){if(gameOver)return;
+var km={ArrowLeft:'L',ArrowRight:'R',ArrowDown:'D',ArrowUp:'U',a:'L',A:'L',d:'R',D:'R',s:'D',S:'D',w:'U',W:'U',KeyA:'L',KeyD:'R',KeyS:'D',KeyW:'U'};
+var k=km[e.key]||km[e.code];if(k==='L'){move(-1,0);draw();}else if(k==='R'){move(1,0);draw();}else if(k==='D'){move(0,1);draw();}else if(k==='U'){rotate();draw();}
+else if(e.key===' '){e.preventDefault();hardDrop();}});
+document.getElementById('btnPause').onclick=function(){paused=!paused;this.textContent=paused?'继续':'暂停';};
+document.getElementById('btnReset').onclick=function(){clearTimeout(timer);newBoard();score=0;level=1;lines=0;gameOver=false;paused=false;updateUI();document.getElementById('btnPause').textContent='暂停';spawn();draw();tick();};
+newBoard();updateUI();spawn();draw();tick();
+</script>
+</body>
+</html>

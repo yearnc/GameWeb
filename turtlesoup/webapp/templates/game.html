@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>海龟汤 · 游戏中</title>
+    <link rel="stylesheet" href="./static/css/style.css">
+</head>
+<body>
+<div id="app">
+    <header id="topbar">
+        <a href="./" class="topbar-back">← 返回</a>
+        <div class="topbar-center">
+            <span class="topbar-title">海龟汤</span>
+            <span class="topbar-round" id="qCounter">剩余 30 次</span>
+        </div>
+        <button id="btnExit" class="topbar-exit">退出</button>
+    </header>
+
+    <main id="chatArea">
+        <div id="chatInner"></div>
+    </main>
+
+    <div id="inputBar">
+        <input type="text" id="msgInput" maxlength="200" placeholder="输入你的问题…">
+        <button id="msgSend">提问</button>
+    </div>
+</div>
+
+<script src="./static/js/game.js"></script>
+</body>
+</html>

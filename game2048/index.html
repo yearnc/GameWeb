@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>2048</title>
+<style>
+:root{--bg:#f5f0e8;--surface:#fefcf8;--border:#e6ddd0;--text:#2d2418;--text-secondary:#6b5e4a}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);display:flex;justify-content:center;padding:20px;min-height:100vh}
+.container{display:flex;flex-direction:column;align-items:center;gap:14px;max-width:360px;width:100%}
+.header{width:100%;display:flex;align-items:center;justify-content:space-between}
+.back{color:var(--text-secondary);text-decoration:none;font-size:.85rem;padding:5px 12px;border:1px solid var(--border);border-radius:20px;background:var(--surface)}
+.back:hover{border-color:#c8b898}
+h1{font-size:1.2rem;font-weight:700}
+.score-box{display:flex;gap:8px}
+.score-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 14px;text-align:center}
+.score-card .label{font-size:.65rem;color:var(--text-secondary)}.score-card .val{font-size:.95rem;font-weight:700}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;background:var(--surface);padding:12px;border:1px solid var(--border);border-radius:12px;width:100%;aspect-ratio:1;position:relative}
+.tile{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-weight:700;border-radius:8px;transition:transform .08s ease;position:relative}
+.tile-0{background:#f0ebe0}.tile-2{background:#faf0e0;color:#6b5e4a}.tile-4{background:#f5e0c0;color:#6b5e4a}
+.tile-8{background:#e08830;color:#fff}.tile-16{background:#d07020;color:#fff}.tile-32{background:#c06010;color:#fff}
+.tile-64{background:#c0392b;color:#fff}.tile-128{background:#f0c040;color:#fff;font-size:1.1rem}
+.tile-256{background:#e0b030;color:#fff;font-size:1.1rem}.tile-512{background:#d0a020;color:#fff;font-size:1.2rem}
+.tile-1024{background:#c09010;color:#fff;font-size:1.3rem}.tile-2048{background:#4f46e5;color:#fff;font-size:1.4rem}
+.tile-new{animation:popIn .2s cubic-bezier(.34,1.56,.64,1)}
+.tile-merged{animation:mergePop .2s cubic-bezier(.34,1.56,.64,1);z-index:1}
+@keyframes popIn{from{transform:scale(0)}to{transform:scale(1)}}
+@keyframes mergePop{0%{transform:scale(1)}40%{transform:scale(1.18)}100%{transform:scale(1)}}
+.btn{padding:10px 20px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text-secondary);font-size:.82rem;cursor:pointer;font-family:inherit}
+.btn:hover{border-color:#c8b898}.btn.primary{background:#2d2418;color:#ede4d6;border-color:#2d2418}
+.hint{font-size:.75rem;color:var(--text-secondary);opacity:.7}
+@media(max-width:400px){.grid{gap:5px;padding:8px}}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header"><a href="/" class="back">← 返回</a><h1>2048</h1><div style="width:50px"></div></div>
+<div class="score-box">
+<div class="score-card"><div class="label">得分</div><div class="val" id="score">0</div></div>
+<div class="score-card"><div class="label">最高</div><div class="val" id="best">0</div></div>
+</div>
+<div class="grid" id="grid"></div>
+<button class="btn primary" id="btnReset">重新开始</button>
+<p class="hint">方向键/WASD 移动 · 手机可滑动</p>
+</div>
+<script>
+var board=[],score=0,best=parseInt(localStorage.getItem('best2048')||'0'),moved=false;
+var newTiles={},mergedTiles={};
+document.getElementById('best').textContent=best;
+
+function init(){board=[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];score=0;newTiles={};mergedTiles={};addTile();addTile();render();}
+function addTile(){var empty=[];for(var r=0;r<4;r++)for(var c=0;c<4;c++)if(!board[r][c])empty.push({r:r,c:c});if(empty.length){var p=empty[Math.floor(Math.random()*empty.length)];board[p.r][p.c]=Math.random()<.9?2:4;newTiles[p.r+','+p.c]=true;}}
+function render(){var g=document.getElementById('grid');g.innerHTML='';
+for(var r=0;r<4;r++)for(var c=0;c<4;c++){var t=document.createElement('div');var k=r+','+c;
+t.className='tile tile-'+board[r][c];if(newTiles[k]){t.classList.add('tile-new');}if(mergedTiles[k]){t.classList.add('tile-merged');}
+t.textContent=board[r][c]||'';g.appendChild(t);}
+newTiles={};mergedTiles={};document.getElementById('score').textContent=score;}
+
+function move(dir){moved=false;var oldBoard=board.map(function(r){return r.slice();});
+for(var i=0;i<4;i++){var line=[];for(var j=0;j<4;j++){var r,c;
+if(dir==='left'){r=i;c=j;}else if(dir==='right'){r=i;c=3-j;}else if(dir==='up'){r=j;c=i;}else{r=3-j;c=i;}
+line.push(board[r][c]);}
+var merged_line=[],skip=false;var mergedPositions=[];
+for(var k=0;k<4;k++){if(!line[k])continue;if(!skip&&merged_line.length>0&&merged_line[merged_line.length-1]===line[k]){merged_line[merged_line.length-1]*=2;score+=merged_line[merged_line.length-1];mergedPositions.push(merged_line.length-1);skip=true;moved=true;}else{merged_line.push(line[k]);skip=false;}}
+while(merged_line.length<4)merged_line.push(0);
+if(!moved)for(var k=0;k<4;k++)if(merged_line[k]!==line[k])moved=true;
+for(var j=0;j<4;j++){var r,c;if(dir==='left'){r=i;c=j;}else if(dir==='right'){r=i;c=3-j;}else if(dir==='up'){r=j;c=i;}else{r=3-j;c=i;}board[r][c]=merged_line[j];if(mergedPositions.indexOf(j)>=0){mergedTiles[r+','+c]=true;}}}
+if(moved){addTile();render();if(score>best){best=score;localStorage.setItem('best2048',best);document.getElementById('best').textContent=best;}}}
+
+document.addEventListener('keydown',function(e){var m={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down',a:'left',A:'left',d:'right',D:'right',w:'up',W:'up',s:'down',S:'down',KeyA:'left',KeyD:'right',KeyW:'up',KeyS:'down'};
+var d=m[e.key]||m[e.code];if(d){e.preventDefault();move(d);}});
+var touchStart;document.addEventListener('touchstart',function(e){touchStart={x:e.touches[0].clientX,y:e.touches[0].clientY}});
+document.addEventListener('touchend',function(e){if(!touchStart)return;var dx=e.changedTouches[0].clientX-touchStart.x,dy=e.changedTouches[0].clientY-touchStart.y;if(Math.abs(dx)>Math.abs(dy))move(dx>0?'right':'left');else if(Math.abs(dy)>30)move(dy>0?'down':'up');});
+document.getElementById('btnReset').onclick=init;init();
+</script>
+</body>
+</html>

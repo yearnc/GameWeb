@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>狼人杀 — 游戏中</title>
+    <link rel="stylesheet" href="./static/css/style.css">
+</head>
+<body>
+    <!-- Background layer -->
+    <div class="bg-layer"></div>
+
+    <!-- Moon -->
+    <div class="moon-container">
+        <div class="moon-disc" id="moon-disc"></div>
+    </div>
+
+    <!-- Forest silhouette -->
+    <div class="forest-silhouette"></div>
+
+    <!-- Ambient particles (fireflies) -->
+    <div class="particles-container" id="particles"></div>
+
+    <!-- Mist layer -->
+    <div class="mist-layer"></div>
+
+    <!-- Screen glow overlay for edge effects -->
+    <div class="screen-glow-overlay" id="screen-glow"></div>
+
+    <!-- Story fragments container -->
+    <div id="story-fragments"></div>
+
+    <div id="app">
+        <!-- Header -->
+        <header id="game-header">
+            <div id="phase-indicator">
+                <span id="phase-icon">🌙</span>
+                <span id="phase-text">等待游戏开始...</span>
+            </div>
+
+            <!-- Celestial Wheel -->
+            <div id="celestial-wheel">
+                <div class="celestial-ring">
+                    <div class="celestial-sun"></div>
+                    <div class="celestial-moon-icon">🌙</div>
+                </div>
+            </div>
+
+            <div id="day-night">
+                <span class="day-night-counter">
+                    <span id="night-count">第0夜</span>
+                    <span class="separator">/</span>
+                    <span id="day-count">第0天</span>
+                </span>
+                <span id="waiting-notice" style="display:none"></span>
+            </div>
+            <div id="header-right">
+                <button id="btn-exit" title="退出游戏返回首页">🚪 退出</button>
+                <div id="sheriff-badge" style="display:none">
+                    <span>🎖️</span><span id="sheriff-name"></span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main content -->
+        <div id="game-body">
+            <!-- Player portrait row (top, horizontal) -->
+            <aside id="player-sidebar">
+                <div id="player-list">
+                    <!-- Filled by JS -->
+                </div>
+            </aside>
+
+            <!-- Center: event scroll + decision altar -->
+            <main id="game-main">
+                <!-- Event scroll -->
+                <section id="event-log">
+                    <div id="event-log-inner">
+                        <!-- Filled by JS -->
+                    </div>
+                </section>
+
+                <!-- Decision altar -->
+                <section id="decision-zone" style="display:none">
+                    <!-- Filled by JS -->
+                </section>
+            </main>
+        </div>
+
+        <!-- Role reveal overlay (tarot card flip) -->
+        <div id="role-overlay" style="display:none">
+            <div class="role-card">
+                <h2>你的身份</h2>
+                <div id="role-info-content"></div>
+                <button onclick="dismissRoleInfo()">知道了</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="./static/js/game.js"></script>
+</body>
+</html>

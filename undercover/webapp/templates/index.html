@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>谁是卧底</title>
+    <link rel="stylesheet" href="./static/css/style.css">
+</head>
+<body class="theme-{{ theme }}">
+<div class="landing">
+    <a href="/" class="back-link">← 返回主页</a>
+
+    {% if theme == 0 %}
+    <!-- ═══════════ 线索板 Evidence Board ═══════════ -->
+    <span id="card-spectate" style="display:none"></span>
+    <span id="card-human" style="display:none"></span>
+    <div class="cork-board">
+        <div class="board-pin pin-1"></div><div class="board-pin pin-2"></div>
+        <div class="board-pin pin-3"></div><div class="board-pin pin-4"></div>
+        <div class="red-thread"></div>
+
+        <div class="board-title">
+            <span class="case-badge">CASE FILE #UC-2026</span>
+            <h1>谁是卧底</h1>
+            <p class="board-sub">5 名嫌疑人 · 1 名卧底 · 身份未知</p>
+        </div>
+
+        <div class="suspects-row">
+            <div class="suspect-photo s1"><span>①</span></div>
+            <div class="suspect-photo s2"><span>②</span></div>
+            <div class="suspect-photo s3 spy-mark"><span>③</span><em>?</em></div>
+            <div class="suspect-photo s4"><span>④</span></div>
+            <div class="suspect-photo s5"><span>⑤</span></div>
+        </div>
+
+        <div class="sticky-notes">
+            <div class="sticky active" id="card-spectate" onclick="startGame('spectate')">
+                <span class="tape"></span>
+                <strong>🔍 监视模式</strong>
+                <span>观察所有嫌疑人通讯</span>
+                <em>START →</em>
+            </div>
+            <div class="sticky danger" id="card-human" onclick="startGame('human')">
+                <span class="tape"></span>
+                <strong>🕵️ 潜入模式</strong>
+                <span>伪装身份混入其中</span>
+                <em>INFILTRATE →</em>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if theme == 1 %}
+    <!-- ═══════════ 终端机 Spy Terminal ═══════════ -->
+    <div class="terminal">
+        <div class="term-header">
+            <span class="term-dot red"></span>
+            <span class="term-dot yellow"></span>
+            <span class="term-dot green"></span>
+            <span class="term-title">SPYNET://classified/ops</span>
+        </div>
+        <div class="term-body">
+            <div class="term-line"><span class="prompt">></span> <span class="cmd">auth --clearance TOP_SECRET</span></div>
+            <div class="term-line"><span class="ok">[OK]</span> 身份验证通过 · 权限等级：机密</div>
+            <div class="term-line"><span class="prompt">></span> <span class="cmd">briefing --case UC-2026</span></div>
+            <div class="term-line term-output">
+                ╔══════════════════════════════════╗<br>
+                ║  卧 底 识 别 行 动               ║<br>
+                ║  5 名目标 · 1 名卧底 · 身份未知  ║<br>
+                ╚══════════════════════════════════╝
+            </div>
+            <div class="term-line"><span class="prompt">></span> <span class="cmd">list --suspects</span></div>
+            <div class="term-line term-output">
+                [①] TARGET-1 · 状态: 活跃<br>
+                [②] TARGET-2 · 状态: 活跃<br>
+                [③] TARGET-3 · 状态: 活跃<br>
+                [④] TARGET-4 · 状态: 活跃<br>
+                [⑤] TARGET-5 · 状态: 活跃<br>
+            </div>
+            <div class="term-line"><span class="prompt">></span> <span class="blink">█</span></div>
+            <div class="term-line" style="margin-top:16px;">
+                <span class="term-hint">输入 <span class="hint-key">surveil</span> 监视模式 · <span class="hint-key">infiltrate</span> 潜入模式</span>
+            </div>
+        </div>
+        <div class="term-input-row">
+            <span class="prompt">></span>
+            <input type="text" id="termInput" class="term-input" placeholder="输入命令..." autofocus>
+        </div>
+        <!-- 隐藏的卡片元素，供 startGame 使用 -->
+        <span id="card-spectate" style="display:none"></span>
+        <span id="card-human" style="display:none"></span>
+    </div>
+    {% endif %}
+
+    {% if theme == 2 %}
+    <!-- ═══════════ 档案室 Classified Dossier ═══════════ -->
+    <div class="dossier">
+        <div class="classified-stamp">CLASSIFIED</div>
+        <div class="top-secret-stamp">TOP SECRET</div>
+        <div class="dossier-header">
+            <span class="dossier-label">案件编号 #UC-2026</span>
+            <span class="dossier-clearance">权限等级 · 机密</span>
+        </div>
+        <div class="briefing">
+            <div class="briefing-icon">🕵️</div>
+            <h1>卧底识别行动</h1>
+            <div class="briefing-divider"></div>
+            <p class="briefing-text">
+                5 名目标人物中，有 1 名卧底。<br>
+                卧底持有一份<strong>不同的情报</strong>，但<strong>无人知晓其身份</strong>——包括卧底自己。
+            </p>
+            <p class="briefing-text briefing-sub">通过语言描述找出差异。每轮投票淘汰最可疑者。</p>
+        </div>
+        <div class="dossier-divider"><span>选择行动方案</span></div>
+        <div class="mission-options">
+            <div class="mission-file spectate" id="card-spectate" onclick="startGame('spectate')">
+                <div class="file-cover">
+                    <div class="file-stamp">EYES ONLY</div>
+                    <div class="file-icon">👁️</div>
+                    <h2>远程监视</h2>
+                    <p>监控所有通讯，实时观察<br>5 名 AI 目标的行为模式</p>
+                </div>
+                <div class="file-footer">
+                    <span class="file-status">状态就绪</span>
+                    <span class="file-action">启动监视 →</span>
+                </div>
+            </div>
+            <div class="mission-file play" id="card-human" onclick="startGame('human')">
+                <div class="file-cover">
+                    <div class="file-stamp danger">FIELD OPS</div>
+                    <div class="file-icon">🎭</div>
+                    <h2>渗透行动</h2>
+                    <p>伪装身份潜入目标群组<br>亲自参与情报交流与甄别</p>
+                </div>
+                <div class="file-footer">
+                    <span class="file-status danger">高风险</span>
+                    <span class="file-action">开始渗透 →</span>
+                </div>
+            </div>
+        </div>
+        <div class="tech-specs">
+            <div class="spec"><span class="spec-icon">🧠</span><span class="spec-label">AI引擎</span><span class="spec-val">LLM v4</span></div>
+            <div class="spec"><span class="spec-icon">📡</span><span class="spec-label">通讯</span><span class="spec-val">SSE</span></div>
+            <div class="spec"><span class="spec-icon">🔐</span><span class="spec-label">加密</span><span class="spec-val">AES-256</span></div>
+            <div class="spec"><span class="spec-icon">📋</span><span class="spec-label">词库</span><span class="spec-val">98组</span></div>
+        </div>
+        <div class="dossier-footer"><span>DOCID: UC-2026-UNDERCOVER · 内部机密</span></div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+var starting = false;
+async function startGame(mode) {
+    if (starting) return;
+    starting = true;
+    var card = document.getElementById('card-' + mode);
+    if (card) card.classList.add('loading');
+    try {
+        var form = new FormData();
+        form.append('mode', mode);
+        await fetch('./api/start', { method: 'POST', body: form });
+        window.location.href = './game?mode=' + mode;
+    } catch (err) {
+        starting = false;
+        if (card) card.classList.remove('loading');
+    }
+}
+
+// 终端机输入处理
+(function() {
+    var input = document.getElementById('termInput');
+    if (!input) return;
+    var body = document.querySelector('.term-body');
+    input.addEventListener('keydown', function(e) {
+        if (e.key !== 'Enter') return;
+        var v = this.value.trim().toLowerCase();
+        if (v === 'surveil') {
+            startGame('spectate');
+        } else if (v === 'infiltrate') {
+            startGame('human');
+        } else if (v) {
+            var line = document.createElement('div');
+            line.className = 'term-line';
+            line.innerHTML = '<span class=\"err\">[ERR]</span> 未知命令: ' + v;
+            body.appendChild(line);
+            this.value = '';
+            body.scrollTop = body.scrollHeight;
+        }
+    });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>消消乐</title>
+<style>
+:root{--bg:#f5f0e8;--surface:#fefcf8;--border:#e6ddd0;--text:#2d2418;--text-secondary:#6b5e4a}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);display:flex;justify-content:center;padding:20px;min-height:100vh}
+.container{display:flex;flex-direction:column;align-items:center;gap:12px}
+.header{width:100%;display:flex;align-items:center;justify-content:space-between}
+.back{color:var(--text-secondary);text-decoration:none;font-size:.85rem;padding:5px 12px;border:1px solid var(--border);border-radius:20px;background:var(--surface)}
+.back:hover{border-color:#c8b898}
+h1{font-size:1.2rem;font-weight:700}
+.info{display:flex;gap:16px;font-size:.85rem;color:var(--text-secondary)}
+canvas{background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.04);cursor:pointer}
+.btn{padding:10px 20px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text-secondary);font-size:.82rem;cursor:pointer;font-family:inherit}
+.btn:hover{border-color:#c8b898}.btn.primary{background:#2d2418;color:#ede4d6;border-color:#2d2418}
+.hint{font-size:.75rem;color:var(--text-secondary);opacity:.7}
+.combo-text{font-size:.7rem;color:#e08830;font-weight:600;min-height:1.2em;text-align:center}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header"><a href="/" class="back">← 返回</a><h1>消消乐</h1><div style="width:50px"></div></div>
+<div class="info"><span>得分: <b id="score">0</b></span><span>步数: <b id="moves">20</b></span><span>最高: <b id="high">0</b></span></div>
+<div class="combo-text" id="comboText"></div>
+<canvas id="board"></canvas>
+<button class="btn primary" id="btnReset">重新开始</button>
+<p class="hint">点击相邻两个方块交换，三个相同即可消除</p>
+</div>
+<script>
+var ROWS=8,COLS=8,CELL=50,COLORS=['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c'];
+var canvas=document.getElementById('board'),ctx=canvas.getContext('2d');
+canvas.width=COLS*CELL;canvas.height=ROWS*CELL;
+var grid=[],score=0,high=parseInt(localStorage.getItem('match3High')||'0'),selected=null,animating=false,combo=0;
+var moves=30,gameOver=false,MAX_MOVES=30;
+document.getElementById('high').textContent=high;
+
+function init(){grid=[];score=0;combo=0;moves=MAX_MOVES;gameOver=false;animating=false;selected=null;
+document.getElementById('score').textContent=score;document.getElementById('moves').textContent=moves;document.getElementById('comboText').textContent='';
+do{for(var r=0;r<ROWS;r++){grid[r]=[];for(var c=0;c<COLS;c++)grid[r][c]=Math.floor(Math.random()*COLORS.length);}}while(hasMatches());draw();}
+
+function draw(flashCells,matchCells,swapA,swapB){
+ctx.fillStyle='#fefcf8';ctx.fillRect(0,0,canvas.width,canvas.height);
+for(var r=0;r<ROWS;r++)for(var c=0;c<COLS;c++){
+var x=c*CELL+2,y=r*CELL+2,w=CELL-4;ctx.fillStyle=COLORS[grid[r][c]];
+var scale=1;if(matchCells&&matchCells[r+','+c])scale=.5+Math.abs(Math.sin(Date.now()/100))*0.5;
+var cx=x+(w-w*scale)/2,cy=y+(w-w*scale)/2;
+ctx.beginPath();ctx.roundRect(cx,cy,w*scale,w*scale,8);ctx.fill();
+if(flashCells&&flashCells[r+','+c]){ctx.fillStyle='rgba(255,255,255,.4)';ctx.beginPath();ctx.roundRect(x,y,w,w,8);ctx.fill();}
+if(selected&&selected.r===r&&selected.c===c&&!(swapA&&(swapA.r===r&&swapA.c===c)||(swapB&&swapB.r===r&&swapB.c===c))){ctx.strokeStyle='#2d2418';ctx.lineWidth=3;ctx.beginPath();ctx.roundRect(x,y,w,w,8);ctx.stroke();}
+}
+if(swapA&&swapB){
+var ax=swapA.c*CELL+2,ay=swapA.r*CELL+2,aw=CELL-4;
+var bx=swapB.c*CELL+2,by=swapB.r*CELL+2,bw=CELL-4;
+var t=(Date.now()%300)/300;t=t<.5?2*t*t:(1-((-2*t+2)*(-2*t+2)+1)/2); // ease in-out
+var mx=ax+(bx-ax)*t,my=ay+(by-ay)*t;
+ctx.fillStyle=COLORS[grid[swapA.r][swapA.c]];ctx.beginPath();ctx.roundRect(mx,my,aw,bw,8);ctx.fill();
+ctx.fillStyle=COLORS[grid[swapB.r][swapB.c]];ctx.beginPath();ctx.roundRect(bx-(bx-ax)*t,by-(by-ay)*t,bw,bw,8);ctx.fill();
+}
+}
+
+function hasMatches(){for(var r=0;r<ROWS;r++)for(var c=0;c<COLS;c++){var v=grid[r][c];if(c<COLS-2&&grid[r][c+1]===v&&grid[r][c+2]===v)return true;if(r<ROWS-2&&grid[r+1][c]===v&&grid[r+2][c]===v)return true;}return false;}
+
+function findMatches(){var m={};for(var r=0;r<ROWS;r++)for(var c=0;c<COLS-2;c++)if(grid[r][c]===grid[r][c+1]&&grid[r][c]===grid[r][c+2]){m[r+','+c]=true;m[r+','+(c+1)]=true;m[r+','+(c+2)]=true;}
+for(var c=0;c<COLS;c++)for(var r=0;r<ROWS-2;r++)if(grid[r][c]===grid[r+1][c]&&grid[r][c]===grid[r+2][c]){m[r+','+c]=true;m[(r+1)+','+c]=true;m[(r+2)+','+c]=true;}return m;}
+
+// 计算有多少组独立的消除（不同颜色/不同区域分别算一组）
+function countMatchGroups(matches){
+var seen={},groups=0;
+for(var k in matches){
+if(seen[k])continue;
+var parts=k.split(','),r=parseInt(parts[0]),c=parseInt(parts[1]);
+var color=grid[r][c],stack=[[r,c]];
+while(stack.length){var p=stack.pop(),pr=p[0],pc=p[1],pk=pr+','+pc;if(!matches[pk]||seen[pk])continue;if(grid[pr][pc]!==color)continue;seen[pk]=true;stack.push([pr-1,pc],[pr+1,pc],[pr,pc-1],[pr,pc+1]);}
+groups++;
+}
+return groups;}
+
+function removeAndDrop(matches,isChain){
+var count=0;for(var k in matches)count++;
+score+=count*10;
+if(!isChain){combo=countMatchGroups(matches);}else{combo++;}
+document.getElementById('score').textContent=score;
+if(combo>=3){var bonus=Math.min(combo-2,3);moves+=bonus;document.getElementById('comboText').textContent=combo+' 连击！+'+bonus+'步';}
+else if(combo>=2)document.getElementById('comboText').textContent=combo+' 连击！';
+document.getElementById('moves').textContent=moves;
+if(score>high){high=score;localStorage.setItem('match3High',high);document.getElementById('high').textContent=high;}
+for(var c=0;c<COLS;c++){var col=[];for(var r=ROWS-1;r>=0;r--)if(!matches[r+','+c])col.push(grid[r][c]);while(col.length<ROWS)col.unshift(Math.floor(Math.random()*COLORS.length));for(var r=0;r<ROWS;r++)grid[ROWS-1-r][c]=col[r];}
+}
+
+function doSwap(a,b,cb){
+var va=grid[a.r][a.c],vb=grid[b.r][b.c];
+grid[a.r][a.c]=vb;grid[b.r][b.c]=va;
+var hasMatch=Object.keys(findMatches()).length>0;
+// Only consume move on valid match; no match → revert swap
+if(hasMatch){moves--;document.getElementById('moves').textContent=moves;}else{grid[a.r][a.c]=va;grid[b.r][b.c]=vb;}
+var start=Date.now();function anim(){var elapsed=Date.now()-start;
+if(elapsed<250){draw(null,null,a,b);requestAnimationFrame(anim);return;}
+draw();
+if(hasMatch){var m=findMatches();cb(m,false);if(moves<=0)setTimeout(endGame,1500);}
+else{animating=false;combo=0;document.getElementById('comboText').textContent='';if(moves<=0)endGame();}
+}anim();}
+
+function endGame(){
+gameOver=true;animating=false;
+ctx.fillStyle='rgba(0,0,0,.5)';ctx.fillRect(0,0,canvas.width,canvas.height);
+ctx.fillStyle='#fff';ctx.font='bold 22px Inter';ctx.textAlign='center';
+ctx.fillText('游戏结束!',canvas.width/2,canvas.height/2-12);
+ctx.font='16px Inter';ctx.fillText('得分: '+score,canvas.width/2,canvas.height/2+20);
+ctx.textAlign='start';
+if(score>high){high=score;localStorage.setItem('match3High',high);document.getElementById('high').textContent=high;}
+}
+
+function processMatches(m,isChain){
+var start=Date.now();function flash(){var elapsed=Date.now()-start;
+if(elapsed<400){draw(m,null,null,null);requestAnimationFrame(flash);return;}
+removeAndDrop(m,isChain);draw();var mm=findMatches();if(Object.keys(mm).length){setTimeout(function(){processMatches(mm,true);},200);}else{animating=false;setTimeout(function(){combo=0;document.getElementById('comboText').textContent='';},1000);draw();}
+}flash();}
+
+canvas.addEventListener('click',function(e){
+if(animating||gameOver)return;var rect=canvas.getBoundingClientRect();
+var c=Math.floor((e.clientX-rect.left)/CELL),r=Math.floor((e.clientY-rect.top)/CELL);
+if(r<0||r>=ROWS||c<0||c>=COLS)return;
+if(!selected){selected={r:r,c:c};draw();return;}
+var dr=Math.abs(selected.r-r),dc=Math.abs(selected.c-c);
+if((dr===1&&dc===0)||(dr===0&&dc===1)){animating=true;var a=selected,b={r:r,c:c};selected=null;
+doSwap(a,b,function(m,ic){processMatches(m,ic);});}else{selected={r:r,c:c};draw();}
+});
+document.getElementById('btnReset').onclick=init;
+init();
+</script>
+</body>
+</html>

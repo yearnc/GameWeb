@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>扫雷</title>
+<style>
+:root{--bg:#f5f0e8;--surface:#fefcf8;--border:#e6ddd0;--text:#2d2418;--text-secondary:#6b5e4a}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);display:flex;justify-content:center;padding:20px;min-height:100vh}
+.container{display:flex;flex-direction:column;align-items:center;gap:12px}
+.header{width:100%;display:flex;align-items:center;justify-content:space-between}
+.back{color:var(--text-secondary);text-decoration:none;font-size:.85rem;padding:5px 12px;border:1px solid var(--border);border-radius:20px;background:var(--surface)}
+.back:hover{border-color:#c8b898}
+h1{font-size:1.2rem;font-weight:700}
+.info{display:flex;gap:16px;font-size:.84rem;color:var(--text-secondary)}
+.grid{display:grid;gap:1px;background:var(--border);border:2px solid #c8b898;border-radius:4px;padding:1px}
+.cell{width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.78rem;cursor:pointer;background:var(--surface);transition:all .1s ease;user-select:none}
+.cell:hover:not(.revealed){background:#f0ebe0}
+.cell.revealed{background:#f8f5f0;cursor:default}
+.cell.flagged{background:#fef5f5}
+.cell.mine{background:#fdd}
+.cell.n1{color:#2980b9}.cell.n2{color:#27ae60}.cell.n3{color:#c0392b}.cell.n4{color:#8e44ad}.cell.n5{color:#c0392b}.cell.n6{color:#16a085}.cell.n7{color:#2d2418}.cell.n8{color:#6b5e4a}
+.btn{padding:8px 16px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text-secondary);font-size:.8rem;cursor:pointer;font-family:inherit}
+.btn:hover{border-color:#c8b898}.btn.primary{background:#2d2418;color:#ede4d6;border-color:#2d2418}
+.mode-bar{display:flex;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:3px}
+.mode-btn{padding:5px 12px;border:none;border-radius:6px;font-size:.75rem;cursor:pointer;background:transparent;color:var(--text-secondary);font-family:inherit}
+.mode-btn.active{background:#2d2418;color:#ede4d6}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header"><a href="/" class="back">← 返回</a><h1>扫雷</h1><div style="width:50px"></div></div>
+<div class="info"><span>💣 <b id="minesLeft">10</b></span><span>⏱ <b id="timer">0</b>s</span></div>
+<div class="mode-bar">
+<button class="mode-btn active" data-r="8" data-c="8" data-m="10">简单</button>
+<button class="mode-btn" data-r="16" data-c="16" data-m="40">中等</button>
+<button class="mode-btn" data-r="16" data-c="30" data-m="99">困难</button>
+</div>
+<div class="grid" id="grid"></div>
+<button class="btn primary" id="btnReset">重新开始</button>
+</div>
+<script>
+var ROWS=8,COLS=8,MINES=10,board=[],revealed=[],flagged=[],gameOver=false,timerVal=0,timerId=null,firstClick=true;
+
+function init(){gameOver=false;firstClick=true;timerVal=0;clearInterval(timerId);timerId=null;
+board=[];revealed=[];flagged=[];for(var r=0;r<ROWS;r++){board[r]=new Array(COLS).fill(0);revealed[r]=new Array(COLS).fill(false);flagged[r]=new Array(COLS).fill(false);}
+document.getElementById('minesLeft').textContent=MINES;document.getElementById('timer').textContent='0';render();}
+
+function placeMines(sr,sc){var placed=0;while(placed<MINES){var r=Math.floor(Math.random()*ROWS),c=Math.floor(Math.random()*COLS);if((Math.abs(r-sr)<=1&&Math.abs(c-sc)<=1)||board[r][c]===-1)continue;board[r][c]=-1;placed++;}
+for(var r=0;r<ROWS;r++)for(var c=0;c<COLS;c++)if(board[r][c]!==-1){var cnt=0;for(var dr=-1;dr<=1;dr++)for(var dc=-1;dc<=1;dc++){var nr=r+dr,nc=c+dc;if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS&&board[nr][nc]===-1)cnt++;}board[r][c]=cnt;}}
+
+function reveal(r,c){if(r<0||r>=ROWS||c<0||c>=COLS||revealed[r][c]||flagged[r][c]||gameOver)return;
+revealed[r][c]=true;if(board[r][c]===-1){gameOver=true;revealAll();render();return;}
+if(board[r][c]===0)for(var dr=-1;dr<=1;dr++)for(var dc=-1;dc<=1;dc++)reveal(r+dr,c+dc);
+checkWin();render();}
+
+function revealAll(){for(var r=0;r<ROWS;r++)for(var c=0;c<COLS;c++)if(board[r][c]===-1)revealed[r][c]=true;}
+
+function toggleFlag(r,c){if(revealed[r][c]||gameOver)return;flagged[r][c]=!flagged[r][c];document.getElementById('minesLeft').textContent=MINES-countFlagged();render();if(flagged[r][c]&&board[r][c]===-1)checkWin();}
+function countFlagged(){var c=0;for(var r=0;r<ROWS;r++)for(var cc=0;cc<COLS;cc++)if(flagged[r][cc])c++;return c;}
+function checkWin(){var allClear=true;for(var r=0;r<ROWS;r++)for(var c=0;c<COLS;c++)if(!revealed[r][c]&&board[r][c]!==-1)allClear=false;if(allClear){gameOver=true;for(var r=0;r<ROWS;r++)for(var c=0;c<COLS;c++)if(board[r][c]===-1)flagged[r][c]=true;render();alert('🎉 你赢了！');}}
+
+function render(){var g=document.getElementById('grid');g.style.gridTemplateColumns='repeat('+COLS+',1fr)';g.innerHTML='';
+for(var r=0;r<ROWS;r++)for(var c=0;c<COLS;c++){var cell=document.createElement('div');cell.className='cell';
+if(revealed[r][c]){cell.classList.add('revealed');if(board[r][c]===-1)cell.classList.add('mine'),cell.textContent='💣';else if(board[r][c]>0)cell.classList.add('n'+board[r][c]),cell.textContent=board[r][c];}
+else if(flagged[r][c]){cell.classList.add('flagged');cell.textContent='🚩';}
+(function(rr,cc){cell.onclick=function(){if(firstClick){placeMines(rr,cc);firstClick=false;timerId=setInterval(function(){timerVal++;document.getElementById('timer').textContent=timerVal;},1000);}reveal(rr,cc);};
+cell.oncontextmenu=function(e){e.preventDefault();toggleFlag(rr,cc);};})(r,c);
+g.appendChild(cell);}}
+
+document.querySelectorAll('.mode-btn').forEach(function(b){b.onclick=function(){
+document.querySelectorAll('.mode-btn').forEach(function(x){x.classList.remove('active');});b.classList.add('active');
+ROWS=parseInt(b.dataset.r);COLS=parseInt(b.dataset.c);MINES=parseInt(b.dataset.m);init();};});
+document.getElementById('btnReset').onclick=init;init();
+</script>
+</body>
+</html>
