@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -24,6 +24,12 @@ sys.path.insert(0, str(BASE_DIR / "undercover"))
 app = FastAPI(title="游戏小站")
 templates = Jinja2Templates(directory=str(BASE_DIR))
 app.mount("/static", StaticFiles(directory=str(BASE_DIR)), name="static")
+
+
+@app.get("/favicon.ico")
+async def favicon():
+    """浏览器默认请求 /favicon.ico 时返回图标"""
+    return FileResponse(str(BASE_DIR / "favicon.ico"))
 
 # 挂载狼人杀子应用
 from werewolf.web.app import app as werewolf_app
