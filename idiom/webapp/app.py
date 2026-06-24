@@ -65,7 +65,7 @@ class GameRunner:
         self.state.last_idiom = idiom
         self.state.last_char = idiom[-1]
         self.state.add_event("ai", idiom)
-        self.state.add_event("system", f"请以「{self.state.last_char}」开头接一个四字成语")
+        self.state.add_event("system", f"请以「{self.state.last_char}」开头接一个四字成语（同音字也可以哦~）")
         self.push(waiting=True)
 
         while not self._stop and not self.state.over:
@@ -75,17 +75,24 @@ class GameRunner:
             self.state.add_event("player", ans)
             self.push()
 
-            # 本地先检查开头字符
-            if not ans.startswith(self.state.last_char):
-                self.state.streak = 0
-                self.state.add_event("judge", f"❌ 需要以「{self.state.last_char}」开头哦！")
-                self.state.add_event("system", f"请重新以「{self.state.last_char}」开头接龙")
-                self.push(waiting=True)
-                continue
-
-            # AI 判断是否为成语 + 给出下一个
-            prompt = f"玩家接了「{ans}」（以「{self.state.last_char}」开头）。如果这是一个真实成语，请用它的最后一个字「{ans[-1]}」开头，接一个新的四字成语。回复格式：正确！我的成语：XXXX。如果「{ans}」不是成语，回复：错误！"
-            system = "你正在玩成语接龙。严格只回复要求格式。"
+            # AI 判断：是否以同音字开头 + 是否真实成语 + 给出下一个
+            prompt = (
+                f"上一个成语：「{self.state.last_idiom}」，结尾字「{self.state.last_char}」\n"
+                f"玩家接了：「{ans}」\n\n"
+                f"请判断：\n"
+                f"1. 「{ans}」的第一个字是否与「{self.state.last_char}」**同音**（包括声调不同也算，如「画(huà)」接「花(huā)」）？\n"
+                f"2. 「{ans}」是否为真实四字成语？\n\n"
+                f"回复格式（严格）：\n"
+                f"- 如果同音且是成语：[正确] 简短夸奖。我的成语：XXXX（用「{ans}」的最后一个字「{ans[-1]}」开头接新成语）\n"
+                f"- 如果同音但不是成语：[错误] 不是成语\n"
+                f"- 如果不同音：[错误] 不是同音字开头\n"
+                f"- 如果接不出来：[认输] 我想不出来了，你赢了！"
+            )
+            system = (
+                "你正在玩成语接龙，规则是同音字开头即可（声调不同也允许）。"
+                "例如「画龙点睛(huà)」可以接「花好月圆(huā)」，因为画和花同音。"
+                "严格只回复要求格式，不要多余内容。"
+            )
             reply = await self.client.chat(system, prompt)
             if not reply:
                 self.state.streak = 0
@@ -94,7 +101,7 @@ class GameRunner:
                 continue
 
             self.state.add_event("judge", reply.strip())
-            if reply.startswith("正确"):
+            if reply.startswith("[正确]") or reply.startswith("正确"):
                 self.state.score += 10
                 self.state.streak += 1
                 import re
@@ -104,13 +111,16 @@ class GameRunner:
                     self.state.last_idiom = new_idiom
                     self.state.last_char = new_idiom[-1]
                     self.state.add_event("ai", new_idiom)
-                    self.state.add_event("system", f"请以「{self.state.last_char}」开头接龙")
+                    self.state.add_event("system", f"请接「{self.state.last_char}」开头的成语（同音字即可）")
                 else:
                     self.state.add_event("system", "AI 接不出来了，你赢了！🎉")
                     self.state.score += 20; self.state.over = True
+            elif reply.startswith("[认输]") or "认输" in reply:
+                self.state.add_event("system", "AI 接不出来了，你赢了！🎉")
+                self.state.score += 20; self.state.over = True
             else:
                 self.state.streak = 0
-                self.state.add_event("system", f"请重新以「{self.state.last_char}」开头接龙")
+                self.state.add_event("system", f"请重新接「{self.state.last_char}」开头的成语（同音字即可）")
             self.push(waiting=not self.state.over)
 
     async def queue_iter(self):

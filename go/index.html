@@ -685,9 +685,12 @@ function mctsSearch() {
     else if (BOARD_SIZE <= 13) iterations = 1000;
     else iterations = 300;
 
+    // Use currentColor so spectator mode works for both sides
+    var aiColor = currentColor;
+
     var root = {
         board: copyBoard(),
-        color: AI_COLOR,
+        color: aiColor,
         move: null,
         parent: null,
         children: [],
@@ -698,7 +701,7 @@ function mctsSearch() {
     for (var iter = 0; iter < iterations; iter++) {
         var node = root;
         var simBoard = copyBoard();
-        var simColor = AI_COLOR;
+        var simColor = aiColor;
 
         // Selection
         while (node.children.length > 0 && node.untriedMoves.length === 0) {
@@ -717,7 +720,7 @@ function mctsSearch() {
                 if (node.untriedMoves.length === 0) {
                     // Both pass → end
                     var result = quickScore(simBoard);
-                    backpropagate(node, result === AI_COLOR ? 1 : (result === 'draw' ? 0.5 : 0));
+                    backpropagate(node, result === aiColor ? 1 : (result === 'draw' ? 0.5 : 0));
                     continue;
                 }
             }
@@ -748,7 +751,7 @@ function mctsSearch() {
         // Simulation (random rollout)
         var rolloutResult = randomRollout(simBoard, simColor);
         var reward;
-        if (rolloutResult === AI_COLOR) reward = 1;
+        if (rolloutResult === aiColor) reward = 1;
         else if (rolloutResult === 'draw') reward = 0.5;
         else reward = 0;
 
@@ -803,21 +806,32 @@ function getLegalMoves(b, color) {
     var moves = [];
     var opponent = color === 'black' ? 'white' : 'black';
 
+    // Check if the board is completely empty
+    var isEmpty = true;
+    for (var i = 0; i < BOARD_SIZE && isEmpty; i++) {
+        for (var j = 0; j < BOARD_SIZE && isEmpty; j++) {
+            if (b[i][j] !== null) isEmpty = false;
+        }
+    }
+
     for (var x = 0; x < BOARD_SIZE; x++) {
         for (var y = 0; y < BOARD_SIZE; y++) {
             if (b[x][y] !== null) continue;
 
             // Quick check: has neighbor (don't play in empty areas)
-            var hasNeighbor = false;
-            var nb = [[x-1,y],[x+1,y],[x,y-1],[x,y+1]];
-            for (var i = 0; i < nb.length; i++) {
-                var nx = nb[i][0], ny = nb[i][1];
-                if (nx >= 0 && nx < BOARD_SIZE && ny >= 0 && ny < BOARD_SIZE && b[nx][ny] !== null) {
-                    hasNeighbor = true;
-                    break;
+            // Skip neighbor check when board is empty (first move)
+            if (!isEmpty) {
+                var hasNeighbor = false;
+                var nb = [[x-1,y],[x+1,y],[x,y-1],[x,y+1]];
+                for (var i = 0; i < nb.length; i++) {
+                    var nx = nb[i][0], ny = nb[i][1];
+                    if (nx >= 0 && nx < BOARD_SIZE && ny >= 0 && ny < BOARD_SIZE && b[nx][ny] !== null) {
+                        hasNeighbor = true;
+                        break;
+                    }
                 }
+                if (!hasNeighbor) continue;
             }
-            if (!hasNeighbor) continue;
 
             // Check if valid
             if (!isValidMoveSim(b, x, y, color)) continue;

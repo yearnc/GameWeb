@@ -63,6 +63,32 @@ class LLMClient:
                     await asyncio.sleep(1.5 * (attempt + 1))
         return None
 
+    async def chat_with_image(
+        self,
+        system_prompt: str,
+        user_message: str,
+        image_base64: str,
+        media_type: str = "image/png",
+        *,
+        retries: int = 2,
+    ) -> Optional[str]:
+        """Send a multimodal chat request with an image.
+
+        image_base64: raw base64 string (no data: prefix)
+        media_type: e.g. "image/png", "image/jpeg"
+        """
+        for attempt in range(retries + 1):
+            try:
+                if self.provider == "anthropic":
+                    return await self._chat_anthropic_image(system_prompt, user_message, image_base64, media_type)
+                else:
+                    return await self._chat_openai_image(system_prompt, user_message, image_base64, media_type)
+            except Exception as e:
+                logger.warning(f"LLM image call failed (attempt {attempt + 1}/{retries + 1}): {e}")
+                if attempt < retries:
+                    await asyncio.sleep(1.5 * (attempt + 1))
+        return None
+
     async def _chat_anthropic(self, system_prompt: str, user_message: str) -> str:
         client = self._get_anthropic()
         response = await client.messages.create(
@@ -71,6 +97,30 @@ class LLMClient:
             temperature=self.temperature,
             system=system_prompt,
             messages=[{"role": "user", "content": user_message}],
+        )
+        return response.content[0].text
+
+    async def _chat_anthropic_image(self, system_prompt: str, user_message: str, image_base64: str, media_type: str) -> str:
+        client = self._get_anthropic()
+        response = await client.messages.create(
+            model=self.model,
+            max_tokens=self.max_tokens,
+            temperature=self.temperature,
+            system=system_prompt,
+            messages=[{
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image",
+                        "source": {
+                            "type": "base64",
+                            "media_type": media_type,
+                            "data": image_base64,
+                        },
+                    },
+                    {"type": "text", "text": user_message},
+                ],
+            }],
         )
         return response.content[0].text
 
@@ -83,6 +133,31 @@ class LLMClient:
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_message},
+            ],
+        )
+        content = response.choices[0].message.content
+        return content or ""
+
+    async def _chat_openai_image(self, system_prompt: str, user_message: str, image_base64: str, media_type: str) -> str:
+        client = self._get_openai()
+        response = await client.chat.completions.create(
+            model=self.model,
+            max_tokens=self.max_tokens,
+            temperature=self.temperature,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:{media_type};base64,{image_base64}",
+                            },
+                        },
+                        {"type": "text", "text": user_message},
+                    ],
+                },
             ],
         )
         content = response.choices[0].message.content

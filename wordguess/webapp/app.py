@@ -52,8 +52,20 @@ class GameRunner:
             if self._stop: return
             ans = ans.strip()
             if ans == "提示":
-                prompt = f"你想的词是「{self.state.word}」，已经给了这些提示：{json.dumps(self.state.hints,ensure_ascii=False)}。请给出第{len(self.state.hints)+1}个提示。绝对不要说出词语本身。只输出提示内容（一句话）。"
-                hint = await self.client.chat("你是猜词游戏主持人。绝对不要说出玩家的词语。只给出暗示。", prompt)
+                prompt = (
+                    f"正确答案是「{self.state.word}」（绝对机密，你在任何情况下都不能说出这个词）。\n"
+                    f"已给出的提示：{json.dumps(self.state.hints, ensure_ascii=False)}\n"
+                    f"请给出第{len(self.state.hints)+1}个提示。要求：\n"
+                    f"1. 提示不能包含正确答案中的任何一个字\n"
+                    f"2. 提示不能是答案的同义词或近义词\n"
+                    f"3. 每个提示从不同角度描述（类别/用途/特征/场景）\n"
+                    f"4. 只输出提示内容（一句话），不要额外文字"
+                )
+                hint = await self.client.chat(
+                    "你是猜词游戏主持人。你的核心铁律：绝对禁止在回复中出现正确答案或其同义词。"
+                    "玩家猜对时你只需确认正确，不要重复词语。给出的提示必须越来越具体但永远不能包含答案。",
+                    prompt
+                )
                 if hint: self.state.hints.append(hint.strip()); self.state.add_event("hint", f"💡 提示{len(self.state.hints)}：{hint.strip()}")
                 self.push(waiting=True); continue
 
@@ -63,9 +75,23 @@ class GameRunner:
                 self.state.add_event("system", f"🎉 恭喜！你猜对了！答案是「{self.state.word}」，得分 {self.state.score}")
                 self.state.over = True; self.push(); return
 
-            # LLM 判断（严格要求不得泄露答案）
-            prompt = f"玩家猜测：「{ans}」。正确答案是「{self.state.word}」。请判断是否正确。如果正确回复「正确！」，如果不正确回复「不对」并给一句提示。注意：提示中严禁出现正确答案「{self.state.word}」这个词！"
-            reply = await self.client.chat("你是猜词游戏主持人。绝对禁止在回复中说出正确答案的词语。", prompt)
+            # LLM 判断
+            prompt = (
+                f"玩家猜测：「{ans}」\n"
+                f"正确答案：「{self.state.word}」（绝对机密，禁止在任何回复中说出这个词）\n\n"
+                f"任务：判断玩家的猜测是否正确。\n"
+                f"- 如果正确（完全匹配）：只需回复「🎉 正确！」\n"
+                f"- 如果不正确：回复一句鼓励性提示。要求：\n"
+                f"  1. 提示中**严禁出现正确答案或其任何同义词、近义词**\n"
+                f"  2. 提示不能包含答案中的任何一个字\n"
+                f"  3. 只能说方向性的暗示（如"再想想颜色"、"字数不对"等），不能说具体内容\n"
+                f"  4. 如果玩家猜测接近（如偏旁、类别接近），可以暗示方向但不说具体差异"
+            )
+            reply = await self.client.chat(
+                "你是猜词游戏主持人。核心铁律：你的回复中绝对禁止出现正确答案及其同义词。"
+                "你只能说方向性暗示，永远不能说出或暗示具体答案是什么。",
+                prompt
+            )
             if reply: self.state.add_event("judge", reply.strip())
             self.push(waiting=True)
 

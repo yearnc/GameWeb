@@ -34,21 +34,50 @@ class GameRunner:
     async def wait(self):
         self._decision.clear(); await self._decision.wait(); return self._value
 
-    def submit(self,v): self._value = v; self._decision.set()
+    def submit(self, text, image=None):
+        self._value = {"text": text, "image": image}; self._decision.set()
+
     def stop(self): self._stop = True
 
     async def run(self):
         self.state.add_event("system", "请在画布上画一个东西，然后点击「让 AI 猜」")
         self.push(waiting=True)
+        history = []
         while not self._stop:
-            ans = await self.wait()
+            data = await self.wait()
             if self._stop: return
             self.state.add_event("player", "🎨 画好了，让 AI 猜…")
             self.push()
-            prompt = f"一个人在画布上画了一些东西。画面描述如下：{ans[:500]}\n请你猜猜这个人画的是什么。只回复你的猜测（一句话），不要多余内容。"
-            reply = await self.client.chat("你是一个猜画游戏的AI，根据画面描述猜测画的是什么。", prompt)
+
+            hist_text = ""
+            if history:
+                hist_text = "之前的猜测历史：" + "；".join(history[-5:]) + "\n"
+
+            prompt = "请你猜猜这幅画画的是什么？只回复你的猜测（一句话），不要多余内容。"
+            if hist_text:
+                prompt = hist_text + prompt
+
+            reply = None
+            # Try image first, fall back to text description
+            if data.get("image"):
+                reply = await self.client.chat_with_image(
+                    "你是一个猜画游戏的AI。玩家画了一幅画，请根据画面内容猜测画的是什么。"
+                    "结合历史猜测来修正推理。",
+                    prompt,
+                    data["image"],
+                    "image/png"
+                )
+            if not reply and data.get("text"):
+                text_prompt = f"画面描述如下：{data['text'][:800]}\n\n{prompt}"
+                reply = await self.client.chat(
+                    "你是一个猜画游戏的AI，根据画面描述猜测画的是什么。",
+                    text_prompt
+                )
+
             if reply:
-                self.state.add_event("ai", f"🤖 AI 猜：{reply.strip()}")
+                guess = reply.strip()
+                self.state.add_event("ai", f"🤖 AI 猜：{guess}")
+                history.append(guess)
             else:
                 self.state.add_event("ai", "🤖 AI 猜不出来…再试试？")
             self.push(waiting=True)
@@ -89,8 +118,8 @@ async def stream():
     return StreamingResponse(gen(), media_type="text/event-stream")
 
 @app.post("/api/decide")
-async def decide(value: str = Form("")):
-    if runner: runner.submit(value)
+async def decide(value: str = Form(""), image: str = Form("")):
+    if runner: runner.submit(text=value, image=image or None)
     return {"status":"ok"}
 
 @app.post("/api/stop")
